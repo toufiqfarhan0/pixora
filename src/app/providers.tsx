@@ -2,10 +2,10 @@
 
 import React from 'react';
 import { PrivyProvider } from '@privy-io/react-auth';
+import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana';
 
-const PRIVY_APP_ID =
-  process.env.NEXT_PUBLIC_PRIVY_APP_ID ||
-  'cmtvfvjwh03p70bl3nzvog9ju';
+const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID || '';
+const solanaConnectors = toSolanaWalletConnectors();
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -16,10 +16,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
           theme: 'light',
           accentColor: '#FF4D26',
           showWalletLoginFirst: true,
-          walletList: ['metamask'],
+          walletChainType: 'solana-only',
+          walletList: ['detected_wallets', 'metamask'],
+        },
+        externalWallets: {
+          solana: {
+            connectors: solanaConnectors,
+          },
         },
         embeddedWallets: {
-          ethereum: { createOnLogin: 'off' },
+          solana: { createOnLogin: 'off' },
         },
         loginMethods: ['wallet'],
       }}

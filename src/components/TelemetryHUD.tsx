@@ -6,9 +6,10 @@ import { CANVAS_ACCOUNT_PUBKEY, shortAddress } from '../lib/magicblock';
 interface TelemetryHUDProps {
   telemetry: ERTelemetry;
   hoveredPixel: { x: number; y: number; pixel?: Pixel } | null;
+  loginMethod?: string | null;
 }
 
-export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ telemetry, hoveredPixel }) => {
+export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ telemetry, hoveredPixel, loginMethod }) => {
   const gasSavedUsd = (telemetry.txCount * 0.002).toFixed(2);
 
   return (
@@ -75,10 +76,10 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ telemetry, hoveredPi
 
         {/* Session Mode Status Bar */}
         <div className="mt-2.5 pt-2 border-t border-zinc-100 flex items-center justify-between text-[10px] font-mono">
-          <span className="text-zinc-500">Auth:</span>
-          <span className="inline-flex items-center gap-1 font-semibold text-[#FF4D26] bg-orange-50 px-2 py-0.5 rounded-md border border-orange-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#FF4D26] pulse-indicator-brand" />
-            MetaMask Verified
+          <span className="text-zinc-500">Session:</span>
+          <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            {loginMethod ? `${loginMethod} Active` : 'Solana ER'}
           </span>
         </div>
 

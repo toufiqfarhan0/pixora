@@ -191,7 +191,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({
               Session Delegation via Privy & Magic Router
             </h3>
             <p className="text-sm text-zinc-600 mt-1 leading-relaxed">
-              When you join Pixora, you authenticate once through Privy using your MetaMask wallet. Pixora delegates the canvas state account to MagicBlock’s Ephemeral Rollup. A short-lived session key is saved locally in your browser to sign each pixel placement without requiring wallet approvals.
+              When you join Pixora, you authenticate once through Privy using your Solana wallet (Phantom, Solflare, etc.). Pixora delegates the canvas state account to MagicBlock’s Ephemeral Rollup. A short-lived session key is saved locally in your browser to sign each pixel placement without requiring wallet approvals.
             </p>
           </div>
         </div>

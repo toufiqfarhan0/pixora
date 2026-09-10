@@ -10,9 +10,11 @@ import {
   Download,
   Palette as PaletteIcon,
   Search,
+  Flame,
 } from 'lucide-react';
 import { ToolMode } from '../types/canvas';
 import { PALETTES } from '../lib/palette';
+import { EnergyBar } from './EnergyBar';
 
 interface ToolbarProps {
   selectedColor: string;
@@ -23,6 +25,11 @@ interface ToolbarProps {
   onZoomOut: () => void;
   onResetView: () => void;
   onExportPNG: () => void;
+  showHeatmap: boolean;
+  onToggleHeatmap: () => void;
+  energy: number;
+  maxEnergy: number;
+  isRecharging: boolean;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -34,13 +41,25 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onZoomOut,
   onResetView,
   onExportPNG,
+  showHeatmap = false,
+  onToggleHeatmap,
+  energy,
+  maxEnergy,
+  isRecharging,
 }) => {
   const [activePaletteIndex, setActivePaletteIndex] = useState(0);
   const currentPalette = PALETTES[activePaletteIndex];
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 max-w-[calc(100vw-2rem)] font-[var(--font-body)]">
-      {/* Palette Selector Bar */}
+      {/* Row 1: Floating Energy & Cooldown Bar */}
+      <EnergyBar
+        energy={energy}
+        maxEnergy={maxEnergy}
+        isRecharging={isRecharging}
+      />
+
+      {/* Row 2: Palette Selector Bar */}
       <div className="bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-200 shadow-subtle flex items-center gap-1.5 overflow-x-auto max-w-full text-xs font-[var(--font-mono)]">
         <PaletteIcon className="h-3.5 w-3.5 text-zinc-400 shrink-0 mr-1" />
         {PALETTES.map((p, idx) => (
@@ -120,6 +139,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             title="Eraser"
           >
             <Eraser className="h-4 w-4" />
+          </button>
+
+          <button
+            onClick={onToggleHeatmap}
+            className={`p-2 rounded-xl transition-all ${
+              showHeatmap
+                ? 'bg-gradient-to-r from-amber-500 to-[#FF4D26] text-white shadow-sm scale-105'
+                : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+            }`}
+            title={showHeatmap ? 'Disable Battle Heatmap' : 'Battle Heatmap (View Contested Zones)'}
+          >
+            <Flame className={`h-4 w-4 ${showHeatmap ? 'animate-pulse' : ''}`} />
           </button>
         </div>
 

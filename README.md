@@ -4,7 +4,7 @@ A real-time massively shared onchain pixel canvas running on **Solana** and **Ma
 
 If you have used Reddit's *r/place* or collaborative canvas experiments, the concept will feel familiar, except here every pixel is cryptographically authenticated and settled on Solana. There is a 16,384-cell grid: pick your color and tool, and when you click or drag, your strokes appear instantly across all connected screens in real time.
 
-Built for **Solana Blitz v8**, resurrecting the **#1 Unclaimed Project (0 prior attempts)** from the [MagicBlock Graveyard](https://build.magicblock.app/graveyard), powered by MagicBlock Ephemeral Rollups and Privy Web3 authentication.
+Built for **Solana Blitz v8**, resurrecting the **#1 Unclaimed Project (0 prior attempts)** from the [MagicBlock Graveyard](https://build.magicblock.app/graveyard), powered by MagicBlock Ephemeral Rollups, Solana Devnet L1 settlement, and Privy Web3 authentication.
 
 ---
 
@@ -24,14 +24,16 @@ Built for **Solana Blitz v8**, resurrecting the **#1 Unclaimed Project (0 prior 
 ## How Pixora Works
 
 1. **128×128 Matrix**: The canvas hosts 16,384 discrete onchain pixel cells.
-2. **MetaMask Web3 Authentication**: Connect your MetaMask wallet via Privy. No anonymous or hardcoded guest spam.
+2. **MetaMask & Web3 Solana Authentication**: Connect your MetaMask or Solana wallet via Privy with direct Solana chain integration.
 3. **Sub-10ms Gasless Strokes**: Every painted stroke routes directly to MagicBlock's Ephemeral Rollup with $0.00 gas fee and immediate confirmation.
-4. **Real-Time Multiplayer Presence**: Real painters see each other's live cursors and strokes in real time. When only one artist is painting, the canvas stays clean with zero artificial mock cursors.
-5. **Color & Tool Engine**:
+4. **Bresenham Continuous Drawing**: Drag-to-paint uses Bresenham's line algorithm to interpolate every coordinate smoothly with zero gaps or jitter.
+5. **Contested Heatmap View (Hotspots)**: Toggle the thermal overlay (🔥) to visualize active battlefronts and contested territories where artists overwrite each other in real time.
+6. **Real-Time Multiplayer Presence**: Real painters see each other's live cursors and strokes in real time. When only one artist is painting, the canvas stays clean with zero artificial mock cursors.
+7. **Color & Tool Engine**:
    - Curated palettes: Neo Chroma, Cyberpunk Neon, Solana Classic, 8-Bit Arcade, and Lo-Fi Pastel, plus custom HEX selection.
-   - Tools: Single-Pixel Pen, 3×3 Area Brush, Eyedropper / Color Picker, Eraser, and Pixel Inspector.
-6. **Pixel Provenance Inspector**: Click any cell in *Inspect* mode to view the cryptographic author address, transaction signature, and confirmation status.
-7. **Commit to Solana L1**: Any verified artist can click **Commit to L1** to compute the canvas state root hash and seal the batch permanently on Solana Layer 1 Devnet with an immutable explorer receipt.
+   - Tools: Single-Pixel Pen, 3×3 Area Brush, Eyedropper / Color Picker, Eraser (with checkerboard pattern preview), and Pixel Inspector.
+8. **Pixel Provenance Inspector**: Click any cell in *Inspect* mode to view the cryptographic author address, transaction signature, and confirmation status.
+9. **Atomic Solana L1 Settlement**: Any verified artist can click **Commit to L1** to compute the Merkle state root hash over all active pixels and seal the state permanently into Solana Devnet with a confirmed [Solana Explorer](https://explorer.solana.com/?cluster=devnet) receipt.
 
 ---
 
@@ -39,7 +41,7 @@ Built for **Solana Blitz v8**, resurrecting the **#1 Unclaimed Project (0 prior 
 
 Running a 128×128 interactive collaborative canvas on base layer Solana presents critical UX obstacles:
 - **Slot Latency (~400ms – 1,200ms)**: Drawing fluid art feels slow and choppy.
-- **Wallet Signature Fatigue**: Drawing a simple 50-pixel circle would trigger 50 wallet popup prompts.
+- **Wallet Signature Fatigue**: Drawing a simple 50-pixel stroke would trigger 50 wallet popup prompts.
 - **Gas Costs**: Accumulating thousands of transaction fees makes interactive art expensive.
 
 By delegating the canvas state account to a **MagicBlock Ephemeral Rollup**:
@@ -77,8 +79,9 @@ flowchart LR
 ## Fair & Secure by Design
 
 - **No Fake / Hardcoded Peers**: Remote cursors only render when real authenticated users join.
+- **Stroke Energy Rate-Limiting**: Built-in 30-stroke energy meter prevents bot spam while allowing human artists to draw fluidly.
 - **Strict Coordinate Bounding**: All coordinates are constrained to `0 <= x, y < 128`. Out-of-bounds instructions are rejected.
-- **Merkle State Hash Verification**: Every batch computes a 32-byte cryptographic root hash across the canvas matrix.
+- **Merkle State Hash Verification**: Every commit computes a 32-byte cryptographic root hash across the canvas matrix.
 - **Non-Custodial**: Private keys never leave the artist's wallet.
 
 ---
@@ -90,26 +93,28 @@ flowchart LR
 │   └── fix-privy-background-warning.mjs  # Suppresses Privy backdrop warnings
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx                    # Next.js Root Layout with fonts & meta
-│   │   ├── page.tsx                      # Main entrypoint
-│   │   └── providers.tsx                 # Privy Web3 Provider config
+│   │   ├── layout.tsx                    # Next.js Root Layout with local fonts & metadata
+│   │   ├── page.tsx                      # Instant static import entrypoint (zero delay)
+│   │   └── providers.tsx                 # Privy Web3 Provider config (Solana-native)
 │   ├── components/
-│   │   ├── ActivitySidebar.tsx           # Live 10ms ER stroke feed & stats
-│   │   ├── CanvasViewport.tsx            # 60 FPS pan/zoom HTML5 Canvas engine
+│   │   ├── ActivitySidebar.tsx           # Live 10ms ER stroke feed, swatches & onchain count
+│   │   ├── CanvasViewport.tsx            # 60 FPS pan/zoom HTML5 Canvas engine with Bresenham
 │   │   ├── CommitModal.tsx               # Cryptographic Solana L1 settlement modal
+│   │   ├── EnergyBar.tsx                 # Stroke energy meter and cooldown rate limiter
 │   │   ├── HowItWorksPage.tsx            # Architectural documentation view
-│   │   ├── LandingHero.tsx               # Hero introduction & canvas preview
+│   │   ├── LandingHero.tsx               # Hero introduction & interactive mini preview
 │   │   ├── MultiplayerCursors.tsx        # Real-time peer cursor overlay
-│   │   ├── Navbar.tsx                    # Top navigation & MetaMask connection
+│   │   ├── Navbar.tsx                    # Top navigation & connected wallet dropdown
 │   │   ├── PixelInspectorModal.tsx       # Pixel provenance & author modal
+│   │   ├── PixoraLogo.tsx                # Official isometric brand logo
 │   │   ├── TelemetryHUD.tsx              # Rollup telemetry (10ms, $0 fee, PDA)
-│   │   └── Toolbar.tsx                   # Drawing tools, palettes, zoom & export
+│   │   └── Toolbar.tsx                   # Unified stack: EnergyBar -> Palettes -> Tools
 │   ├── hooks/
-│   │   ├── useCanvas.ts                  # High-performance canvas pan/zoom/draw
-│   │   ├── useMagicBlockER.ts            # Ephemeral Rollup pipeline & L1 commit
+│   │   ├── useCanvas.ts                  # High-performance canvas pan/zoom/draw & Bresenham
+│   │   ├── useMagicBlockER.ts            # Ephemeral Rollup pipeline & live Devnet settlement
 │   │   └── useRealtimeMultiplayer.ts     # BroadcastChannel real-time peer presence
 │   ├── lib/
-│   │   ├── magicblock.ts                 # MagicBlock router endpoints & L1 helper
+│   │   ├── magicblock.ts                 # MagicBlock router endpoints & live Devnet RPC
 │   │   └── palette.ts                    # Color palettes & presets
 │   └── types/
 │       └── canvas.ts                     # TypeScript interfaces
@@ -186,3 +191,4 @@ Generates the optimized production build with complete TypeScript type-checking.
 - [Solana Blitz v8 Submission Portal](https://build.magicblock.app/?stage=blitz#submit)
 - [Ephemeral Rollups SDK](https://github.com/magicblock-labs/ephemeral-rollups-sdk)
 - [Privy React Documentation](https://docs.privy.io/basics/react/installation)
+

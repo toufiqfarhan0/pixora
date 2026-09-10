@@ -50,7 +50,7 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
   // Push placed pixel through the 10ms Ephemeral Rollup pipeline
   const streamPixel = useCallback(
     (x: number, y: number, color: string): Pixel => {
-      const authorName = userAddress ? userAddress : 'MetaMask Artist';
+      const authorName = userAddress || 'Solana Painter';
       const txHash = generateTxHash();
 
       const newPixel: Pixel = {

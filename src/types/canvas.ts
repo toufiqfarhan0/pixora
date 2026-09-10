@@ -7,6 +7,7 @@ export interface Pixel {
   txHash?: string;
   isERConfirmed: boolean;
   isVerified?: boolean;
+  heat?: number;
 }
 
 export interface CanvasState {

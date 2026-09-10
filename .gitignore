@@ -1,5 +1,7 @@
 # Next.js build output
+.next
 .next/
+**/.next/**
 out/
 build/
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { Navbar } from './components/Navbar';
 import { CanvasViewport } from './components/CanvasViewport';
@@ -24,26 +24,22 @@ export const App: React.FC = () => {
   // Navigation View: 'landing' | 'canvas' | 'how-it-works'
   const [currentView, setCurrentView] = useState<'landing' | 'canvas' | 'how-it-works'>('landing');
 
-  // Privy Web3 Authentication (MetaMask verified)
+  // Official Privy Web3 Authentication
   const { ready, authenticated, user, login, logout } = usePrivy();
 
-  const solanaWallet = user?.linkedAccounts?.find(
-    (account) => account.type === 'wallet' && (account as any).chainType === 'solana'
-  );
-  const userAddress = authenticated
-    ? ((solanaWallet && 'address' in solanaWallet ? (solanaWallet as any).address : null) ??
-      user?.wallet?.address ??
-      null)
-    : null;
+  // Dynamic user address from connected wallet (strictly real, never hardcoded)
+  const userAddress = authenticated ? (user?.wallet?.address ?? null) : null;
 
   const loginMethod = authenticated
     ? (user?.wallet?.walletClientType === 'metamask'
         ? 'MetaMask'
         : user?.wallet?.walletClientType === 'phantom'
         ? 'Phantom'
-        : solanaWallet
-        ? 'Solana Wallet'
-        : 'MetaMask Verified')
+        : user?.wallet?.walletClientType === 'solflare'
+        ? 'Solflare'
+        : user?.wallet?.chainType === 'solana'
+        ? 'Solana'
+        : 'Wallet Verified')
     : null;
 
   const authMode: AuthMode = 'live';
@@ -52,6 +48,7 @@ export const App: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState<string>(DEFAULT_COLOR);
   const [toolMode, setToolMode] = useState<ToolMode>('pen');
   const [isCommitModalOpen, setIsCommitModalOpen] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(false);
 
   // Clean empty starter canvas ready for real painters
   const initialPixels = useMemo<Pixel[]>(() => [], []);
@@ -72,6 +69,20 @@ export const App: React.FC = () => {
 
   const [welcomeToast, setWelcomeToast] = useState<string | null>(null);
 
+  // Fast recharging stroke energy (allows fluid drag-painting)
+  const maxEnergy = 30;
+  const [energy, setEnergy] = useState<number>(30);
+  const isRecharging = energy < maxEnergy;
+  const lastEnergyDeductTimeRef = useRef(0);
+
+  useEffect(() => {
+    if (energy >= maxEnergy) return;
+    const timer = setTimeout(() => {
+      setEnergy((prev) => Math.min(prev + 1, maxEnergy));
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [energy, maxEnergy]);
+
   // Real-time peer cursors & multiplayer sync across tabs and windows
   const { remotePeers, broadcastCursor, broadcastPixel, peerCount } = useRealtimeMultiplayer({
     userAddress,
@@ -86,15 +97,27 @@ export const App: React.FC = () => {
   const handlePixelPlaced = useCallback(
     (x: number, y: number, color: string) => {
       if (!authenticated) {
-        setWelcomeToast('🔒 Connect your MetaMask wallet via Privy to place pixels on Solana ER!');
+        setWelcomeToast('🔒 Connect your wallet via Privy to place pixels on Solana ER!');
         setTimeout(() => setWelcomeToast(null), 4000);
         if (ready) login();
         return;
       }
+      const now = Date.now();
+      // Deduct stroke energy smoothly during continuous drag (at most once every 350ms of active dragging)
+      if (now - lastEnergyDeductTimeRef.current > 350) {
+        if (energy <= 0) {
+          setWelcomeToast('⚡ Energy recharging! Ready in a moment...');
+          setTimeout(() => setWelcomeToast(null), 2500);
+          return;
+        }
+        lastEnergyDeductTimeRef.current = now;
+        setEnergy((prev) => Math.max(0, prev - 1));
+      }
+
       const newPixel = streamPixel(x, y, color);
       broadcastPixel(newPixel);
     },
-    [authenticated, ready, login, streamPixel, broadcastPixel]
+    [authenticated, ready, login, energy, streamPixel, broadcastPixel]
   );
 
   const [inspectedPixel, setInspectedPixel] = useState<{
@@ -114,6 +137,7 @@ export const App: React.FC = () => {
     offset,
     hoveredPixel,
     pixelsMap,
+    allPixels,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
@@ -129,13 +153,14 @@ export const App: React.FC = () => {
     onInspectPixel: handleInspectPixel,
     initialPixels,
     onCursorMove: broadcastCursor,
+    showHeatmap,
   });
 
   const handleZoomIn = () => setScale((s) => Math.min(s * 1.3, 48));
   const handleZoomOut = () => setScale((s) => Math.max(s * 0.7, 1.5));
 
-  // Convert pixelsMap to array
-  const allPixelsArray = useMemo(() => Array.from(pixelsMap.values()), [pixelsMap]);
+  // Direct reactive array of all placed canvas pixels
+  const allPixelsArray = allPixels;
 
   // Export Canvas PNG
   const handleExportPNG = () => {
@@ -160,14 +185,14 @@ export const App: React.FC = () => {
     a.click();
   };
 
-  const handleOpenPrivyModal = useCallback(() => {
+  const handleOpenWalletModal = useCallback(() => {
     if (ready) login();
   }, [ready, login]);
 
   const handleDisconnect = useCallback(() => {
     logout();
-    setWelcomeToast('⚡ Disconnected. Connect your wallet via Privy to paint.');
-    setTimeout(() => setWelcomeToast(null), 3500);
+    setWelcomeToast('⚡ Disconnected wallet.');
+    setTimeout(() => setWelcomeToast(null), 3000);
   }, [logout]);
 
   return (
@@ -178,14 +203,14 @@ export const App: React.FC = () => {
         onNavigate={setCurrentView}
         onOpenCommit={() => {
           if (!authenticated) {
-            setWelcomeToast('🔒 Connect your MetaMask wallet to commit to Solana L1!');
+            setWelcomeToast('🔒 Connect your wallet to commit to Solana L1!');
             setTimeout(() => setWelcomeToast(null), 4000);
             if (ready) login();
             return;
           }
           setIsCommitModalOpen(true);
         }}
-        onOpenWalletModal={handleOpenPrivyModal}
+        onOpenWalletModal={handleOpenWalletModal}
         onDisconnect={handleDisconnect}
         userAddress={userAddress}
         loginMethod={loginMethod}
@@ -201,7 +226,7 @@ export const App: React.FC = () => {
             <LandingHero
               onLaunchCanvas={() => setCurrentView('canvas')}
               onOpenHowItWorks={() => setCurrentView('how-it-works')}
-              onOpenWalletModal={handleOpenPrivyModal}
+              onOpenWalletModal={handleOpenWalletModal}
               userAddress={userAddress}
             />
           </div>
@@ -232,10 +257,12 @@ export const App: React.FC = () => {
                 handlePointerMove={handlePointerMove}
                 handlePointerUp={handlePointerUp}
                 remoteCursors={remotePeers}
+                hoveredPixel={hoveredPixel}
+                showHeatmap={showHeatmap}
               />
             </main>
 
-            {/* Floating Bottom Toolbar */}
+            {/* Floating Bottom Toolbar (Unified stack: EnergyBar -> Palette -> Tools) */}
             <Toolbar
               selectedColor={selectedColor}
               onSelectColor={setSelectedColor}
@@ -245,10 +272,15 @@ export const App: React.FC = () => {
               onZoomOut={handleZoomOut}
               onResetView={centerCanvas}
               onExportPNG={handleExportPNG}
+              showHeatmap={showHeatmap}
+              onToggleHeatmap={() => setShowHeatmap((prev) => !prev)}
+              energy={energy}
+              maxEnergy={maxEnergy}
+              isRecharging={isRecharging}
             />
 
             {/* Bottom-left Telemetry HUD */}
-            <TelemetryHUD telemetry={telemetry} hoveredPixel={hoveredPixel} />
+            <TelemetryHUD telemetry={telemetry} hoveredPixel={hoveredPixel} loginMethod={loginMethod} />
 
             {/* Top-right Activity Stream Sidebar */}
             <ActivitySidebar
@@ -279,7 +311,7 @@ export const App: React.FC = () => {
         isCommitting={isCommitting}
         lastCommitResult={lastCommitResult}
         authMode={authMode}
-        onOpenPrivyModal={handleOpenPrivyModal}
+        onOpenPrivyModal={handleOpenWalletModal}
       />
 
       {/* Pixel Provenance Inspector Modal */}

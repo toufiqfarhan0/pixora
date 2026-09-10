@@ -336,7 +336,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-[#FF4D26] font-bold mt-0.5">✓</span>
-                <span><strong>Session Delegation:</strong> Connect once via MetaMask; zero pop-ups during painting.</span>
+                <span><strong>Session Delegation:</strong> Connect once via Solana wallet; zero pop-ups during painting.</span>
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-[#FF4D26] font-bold mt-0.5">✓</span>
@@ -384,14 +384,14 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <h3 className="font-bold text-base text-zinc-900 mb-2 font-[var(--font-display)]">
-                MetaMask &amp; Session Keys
+                Solana &amp; Session Keys
               </h3>
               <p className="text-xs text-zinc-500 leading-relaxed">
-                Connect via MetaMask. A temporary session key authorizes gasless drawing without exposing private keys.
+                Connect via Phantom, Solflare, or standard wallet. A temporary session key authorizes gasless drawing without exposing private keys.
               </p>
             </div>
             <span className="text-[11px] font-mono text-brand-600 font-bold mt-4 block">
-              MetaMask Auth →
+              Solana Auth →
             </span>
           </div>
 

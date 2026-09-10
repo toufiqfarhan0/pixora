@@ -68,24 +68,24 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
               Your Artist Profile
             </span>
             <span
-              className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                authMode === 'live'
-                  ? 'bg-orange-100/90 text-[#FF4D26] border border-orange-300/50'
-                  : 'bg-zinc-200/70 text-zinc-600'
+              className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                userAddress
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : 'bg-zinc-100 text-zinc-500'
               }`}
             >
-              <CheckCircle2 className="h-3 w-3 text-[#FF4D26]" />
-              <span>MetaMask Verified</span>
+              <span className={`h-1.5 w-1.5 rounded-full ${userAddress ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
+              <span>{userAddress ? 'Active' : 'Disconnected'}</span>
             </span>
           </div>
 
           <div className="flex items-center justify-between text-xs font-[var(--font-mono)]">
             <div className="flex items-center gap-1.5 truncate max-w-[170px]">
               <span className="font-semibold text-zinc-900" title={userAddress || ''}>
-                {userAddress ? shortAddress(userAddress, 4) : 'MetaMask'}
+                {userAddress ? shortAddress(userAddress, 4) : 'Disconnected'}
               </span>
               <span className="text-[9px] text-[#FF4D26] bg-white/90 px-1.5 py-0.2 rounded border border-orange-200/60 font-sans font-medium">
-                MetaMask
+                {loginMethod || 'Solana'}
               </span>
             </div>
             <span className="text-[10px] text-zinc-400 font-sans">
@@ -103,43 +103,55 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
             <p className="text-xs text-zinc-400 py-6 text-center font-mono leading-relaxed">
               No recent activity
               <span className="text-[11px] text-zinc-400/80 mt-1 block font-sans">
-                Connect MetaMask to paint live
+                Connect wallet to paint live
               </span>
             </p>
           ) : (
-            activities.slice(0, 8).map((act) => (
-              <div
-                key={act.id}
-                className="p-2.5 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-between text-xs font-[var(--font-mono)] animate-fade-in hover:border-zinc-200 transition-colors"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className="h-3.5 w-3.5 rounded-md shrink-0 border border-black/10 shadow-xs"
-                    style={{ backgroundColor: act.color }}
-                  />
-                  <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className="font-semibold text-zinc-800 truncate max-w-[100px]" title={act.author}>
-                        {shortAddress(act.author, 3)}
-                      </span>
-                      {act.isVerified && (
-                        <span className="inline-flex items-center text-[9px] font-bold text-[#FF4D26] bg-orange-50 px-1 rounded">
-                          Live ✓
+            activities.slice(0, 10).map((act) => {
+              const isErase =
+                !act.color ||
+                act.color.toLowerCase() === '#ffffff' ||
+                act.color.toLowerCase() === '#fff';
+
+              return (
+                <div
+                  key={act.id}
+                  className="p-2 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-between text-xs font-[var(--font-mono)] animate-fade-in hover:border-zinc-200 transition-colors"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div
+                      className="h-4 w-4 rounded-md shrink-0 border border-zinc-300 shadow-2xs relative overflow-hidden"
+                      style={{
+                        backgroundColor: act.color || '#FFFFFF',
+                        backgroundImage: isErase
+                          ? 'repeating-conic-gradient(#e2e8f0 0% 25%, #ffffff 0% 50%)'
+                          : undefined,
+                        backgroundSize: '8px 8px',
+                      }}
+                      title={isErase ? 'Erased' : act.color}
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-zinc-900 truncate max-w-[90px]" title={act.author}>
+                          {shortAddress(act.author, 3)}
                         </span>
-                      )}
+                        <span className="text-[10px] font-mono text-zinc-500 font-medium">
+                          {isErase ? 'erased' : act.color}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-zinc-400 font-mono">
+                        ({act.x}, {act.y})
+                      </span>
                     </div>
-                    <span className="text-[10px] text-zinc-400 font-sans">
-                      ({act.x}, {act.y})
-                    </span>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <span className="text-[10px] text-[#FF4D26] font-bold block">10ms</span>
+                    <span className="text-[9px] text-zinc-400 font-sans">confirmed</span>
                   </div>
                 </div>
-
-                <div className="text-right shrink-0">
-                  <span className="text-[10px] text-brand-600 font-bold block">10ms</span>
-                  <span className="text-[9px] text-zinc-400 font-sans">confirmed</span>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 

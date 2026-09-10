@@ -1,5 +1,32 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { Pixel, ToolMode } from '../types/canvas';
+
+function getLinePixels(x0: number, y0: number, x1: number, y1: number): Array<{ x: number; y: number }> {
+  const points: Array<{ x: number; y: number }> = [];
+  const dx = Math.abs(x1 - x0);
+  const dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy;
+
+  let curX = x0;
+  let curY = y0;
+
+  while (true) {
+    points.push({ x: curX, y: curY });
+    if (curX === x1 && curY === y1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) {
+      err -= dy;
+      curX += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      curY += sy;
+    }
+  }
+  return points;
+}
 
 interface UseCanvasProps {
   width: number;
@@ -10,6 +37,7 @@ interface UseCanvasProps {
   onInspectPixel?: (x: number, y: number, pixel: Pixel | null) => void;
   initialPixels?: Pixel[];
   onCursorMove?: (x: number, y: number, isDrawing: boolean) => void;
+  showHeatmap?: boolean;
 }
 
 export function useCanvas({
@@ -21,11 +49,13 @@ export function useCanvas({
   onInspectPixel,
   initialPixels = [],
   onCursorMove,
+  showHeatmap = false,
 }: UseCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // In-memory pixel map: "x,y" => Pixel
   const pixelsRef = useRef<Map<string, Pixel>>(new Map());
+  const [pixelsVersion, setPixelsVersion] = useState<number>(0);
 
   // Viewport transformation: zoom and pan
   const [scale, setScale] = useState<number>(6); // initial zoom factor
@@ -43,6 +73,7 @@ export function useCanvas({
       initialPixels.forEach((p) => {
         pixelsRef.current.set(`${p.x},${p.y}`, p);
       });
+      setPixelsVersion((v) => v + 1);
       requestRender();
     }
   }, [initialPixels]);
@@ -56,7 +87,11 @@ export function useCanvas({
       animFrameRef.current = null;
       renderCanvas();
     });
-  }, [scale, offset, hoveredPixel]);
+  }, [scale, offset, hoveredPixel, showHeatmap]);
+
+  useEffect(() => {
+    requestRender();
+  }, [showHeatmap, requestRender]);
 
   const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -93,9 +128,21 @@ export function useCanvas({
     ctx.lineWidth = 1 / scale;
     ctx.strokeRect(0, 0, width, height);
 
-    // Draw placed pixels
+    // Draw placed pixels (with optional battle heatmap overlay)
     pixelsRef.current.forEach((pixel) => {
-      ctx.fillStyle = pixel.color;
+      if (showHeatmap) {
+        const heat = pixel.heat || 1;
+        // Battle Heatmap intensity gradient: Gold -> Fiery Orange -> Deep Crimson
+        if (heat === 1) {
+          ctx.fillStyle = '#F59E0B';
+        } else if (heat === 2) {
+          ctx.fillStyle = '#FF4D26';
+        } else {
+          ctx.fillStyle = '#DC2626';
+        }
+      } else {
+        ctx.fillStyle = pixel.color;
+      }
       ctx.fillRect(pixel.x, pixel.y, 1, 1);
     });
 
@@ -155,17 +202,15 @@ export function useCanvas({
     [offset, scale, width, height]
   );
 
-  // Apply brush stroke
-  const applyPixelAction = useCallback(
+  // Apply single pixel modification
+  const applySinglePixel = useCallback(
     (gridX: number, gridY: number) => {
-      if (lastPlacedRef.current?.x === gridX && lastPlacedRef.current?.y === gridY) {
-        return;
-      }
-      lastPlacedRef.current = { x: gridX, y: gridY };
-
       if (toolMode === 'eraser') {
-        pixelsRef.current.delete(`${gridX},${gridY}`);
-        onPixelPlaced(gridX, gridY, '#FFFFFF');
+        const existed = pixelsRef.current.has(`${gridX},${gridY}`);
+        if (existed) {
+          pixelsRef.current.delete(`${gridX},${gridY}`);
+          onPixelPlaced(gridX, gridY, '#FFFFFF');
+        }
       } else if (toolMode === 'brush') {
         // 3x3 brush radius
         for (let dx = -1; dx <= 1; dx++) {
@@ -173,6 +218,7 @@ export function useCanvas({
             const bx = gridX + dx;
             const by = gridY + dy;
             if (bx >= 0 && bx < width && by >= 0 && by < height) {
+              const existing = pixelsRef.current.get(`${bx},${by}`);
               const p: Pixel = {
                 x: bx,
                 y: by,
@@ -180,6 +226,7 @@ export function useCanvas({
                 author: 'Me',
                 timestamp: Date.now(),
                 isERConfirmed: true,
+                heat: (existing?.heat || 0) + 1,
               };
               pixelsRef.current.set(`${bx},${by}`, p);
               onPixelPlaced(bx, by, selectedColor);
@@ -188,6 +235,7 @@ export function useCanvas({
         }
       } else {
         // Standard pen
+        const existing = pixelsRef.current.get(`${gridX},${gridY}`);
         const p: Pixel = {
           x: gridX,
           y: gridY,
@@ -195,14 +243,36 @@ export function useCanvas({
           author: 'Me',
           timestamp: Date.now(),
           isERConfirmed: true,
+          heat: (existing?.heat || 0) + 1,
         };
         pixelsRef.current.set(`${gridX},${gridY}`, p);
         onPixelPlaced(gridX, gridY, selectedColor);
       }
+    },
+    [toolMode, selectedColor, width, height, onPixelPlaced]
+  );
 
+  // Smooth continuous line drawing using Bresenham algorithm
+  const drawLineTo = useCallback(
+    (targetX: number, targetY: number) => {
+      if (!lastPlacedRef.current) {
+        lastPlacedRef.current = { x: targetX, y: targetY };
+        applySinglePixel(targetX, targetY);
+      } else {
+        const points = getLinePixels(
+          lastPlacedRef.current.x,
+          lastPlacedRef.current.y,
+          targetX,
+          targetY
+        );
+        for (let i = 1; i < points.length; i++) {
+          applySinglePixel(points[i].x, points[i].y);
+        }
+        lastPlacedRef.current = { x: targetX, y: targetY };
+      }
       requestRender();
     },
-    [toolMode, selectedColor, width, height, onPixelPlaced, requestRender]
+    [applySinglePixel, requestRender]
   );
 
   // Mouse wheel: Zoom in/out smoothly toward cursor
@@ -256,14 +326,17 @@ export function useCanvas({
           }
 
           isDrawingRef.current = true;
-          applyPixelAction(grid.x, grid.y);
+          lastPlacedRef.current = { x: grid.x, y: grid.y };
+          applySinglePixel(grid.x, grid.y);
+          setPixelsVersion((v) => v + 1);
+          requestRender();
         } else {
           isPanningRef.current = true;
           panStartRef.current = { x: e.clientX - offset.x, y: e.clientY - offset.y };
         }
       }
     },
-    [offset, screenToGrid, toolMode, applyPixelAction, onPixelPlaced]
+    [offset, screenToGrid, toolMode, applySinglePixel, onPixelPlaced, onInspectPixel, requestRender]
   );
 
   // Pointer Move
@@ -287,26 +360,35 @@ export function useCanvas({
         }
 
         if (isDrawingRef.current) {
-          applyPixelAction(grid.x, grid.y);
+          drawLineTo(grid.x, grid.y);
         }
       } else {
         setHoveredPixel(null);
       }
     },
-    [screenToGrid, applyPixelAction, onCursorMove]
+    [screenToGrid, drawLineTo, onCursorMove]
   );
 
   // Pointer Up / Leave
   const handlePointerUp = useCallback(() => {
     isPanningRef.current = false;
-    isDrawingRef.current = false;
-    lastPlacedRef.current = null;
+    if (isDrawingRef.current) {
+      isDrawingRef.current = false;
+      lastPlacedRef.current = null;
+      setPixelsVersion((v) => v + 1);
+    }
   }, []);
 
   // External update (from peer or ER sync)
   const setRemotePixel = useCallback(
     (pixel: Pixel) => {
-      pixelsRef.current.set(`${pixel.x},${pixel.y}`, pixel);
+      const existing = pixelsRef.current.get(`${pixel.x},${pixel.y}`);
+      const updatedPixel: Pixel = {
+        ...pixel,
+        heat: (existing?.heat || 0) + 1,
+      };
+      pixelsRef.current.set(`${pixel.x},${pixel.y}`, updatedPixel);
+      setPixelsVersion((v) => v + 1);
       requestRender();
     },
     [requestRender]
@@ -340,12 +422,21 @@ export function useCanvas({
     centerCanvas();
   }, [centerCanvas]);
 
+  // Reactively computed list of all placed pixels
+  const allPixels = useMemo(
+    () => Array.from(pixelsRef.current.values()),
+    [pixelsVersion]
+  );
+
   return {
     canvasRef,
     scale,
     offset,
     hoveredPixel,
     pixelsMap: pixelsRef.current,
+    allPixels,
+    pixelCount: pixelsRef.current.size,
+    pixelsVersion,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,

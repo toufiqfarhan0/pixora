@@ -115,15 +115,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right Controls */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Mode Status Pill */}
-        {authMode === 'live' && (
-          <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200 font-[var(--font-mono)] text-[11px]">
-            <span className="h-2 w-2 rounded-full bg-brand pulse-indicator-brand" />
-            <span className="text-brand-700 font-semibold">MetaMask</span>
-            <span className="text-zinc-300">·</span>
-            <span className="text-brand-600 font-bold">Verified</span>
-          </div>
-        )}
 
         {/* Commit to L1 button (visible when on canvas) */}
         {currentView === 'canvas' && (
@@ -147,63 +138,64 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         )}
 
-        {/* Privy Wallet / Auth Button & Dropdown */}
+        {/* Connected Wallet Button & Dropdown (Matches Reference Screenshot) */}
         {userAddress ? (
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen((prev) => !prev)}
-              className="group flex h-9 min-w-[128px] items-center gap-2 rounded-full border border-zinc-300 bg-white px-3.5 font-mono text-xs font-semibold leading-none text-zinc-800 transition-colors hover:border-orange-400 hover:bg-orange-50/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70 shadow-2xs"
+              className="group flex h-9 items-center gap-2 rounded-full border border-zinc-200 bg-white px-3.5 font-mono text-xs font-semibold leading-none text-zinc-800 transition-colors hover:border-zinc-300 hover:bg-zinc-50 focus-visible:outline-none shadow-2xs"
               title="Click to manage connected wallet"
             >
-              <span className="w-2 h-2 rounded-full bg-[#FF4D26] animate-pulse shrink-0" />
-              <span className="flex-1 text-left">
+              <span>
                 {userAddress.length > 10
                   ? `${userAddress.slice(0, 4)}...${userAddress.slice(-4)}`
                   : userAddress}
               </span>
               <ChevronDown
-                className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 group-hover:text-zinc-700 ${
+                className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 group-hover:text-zinc-600 ${
                   isDropdownOpen ? 'rotate-180' : ''
                 }`}
               />
             </button>
 
-            {/* Connected User Dropdown Popover (Exact BlitzMine Reference) */}
+            {/* Connected User Dropdown Popover (Exact Match to Reference Screenshot) */}
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-[270px] rounded-xl border border-zinc-200/90 bg-white/95 p-2 shadow-popover backdrop-blur-xl z-50 animate-fade-in text-zinc-900">
-                <div className="px-2.5 pb-2 pt-1.5">
-                  <span className="text-[10px] font-mono font-medium uppercase tracking-[0.12em] text-zinc-400">
-                    Connected
+              <div className="absolute right-0 mt-2 w-[290px] rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl z-50 animate-fade-in text-zinc-900">
+                <div>
+                  <span className="text-[11px] font-mono font-medium uppercase tracking-[0.14em] text-zinc-400">
+                    CONNECTED
                   </span>
-                  <p className="mt-1.5 break-all font-mono text-[11px] leading-relaxed text-zinc-800 select-all">
+                  <p className="mt-2.5 break-all font-mono text-[13px] leading-relaxed text-zinc-900 select-all">
                     {userAddress}
                   </p>
                 </div>
 
-                <div className="h-px bg-zinc-100 my-1" />
+                <div className="h-px bg-zinc-100 my-3" />
 
-                <button
-                  onClick={handleCopy}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-mono text-xs text-zinc-700 hover:bg-zinc-100/70 transition-colors text-left"
-                >
-                  {copied ? (
-                    <Check className="h-3.5 w-3.5 text-[#FF4D26]" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5 text-zinc-400" />
-                  )}
-                  <span>{copied ? 'Copied' : 'Copy address'}</span>
-                </button>
+                <div className="space-y-1">
+                  <button
+                    onClick={handleCopy}
+                    className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg font-mono text-xs font-medium text-zinc-800 hover:bg-zinc-100 transition-colors text-left"
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-[#FF4D26]" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-zinc-500" />
+                    )}
+                    <span>{copied ? 'Copied' : 'Copy address'}</span>
+                  </button>
 
-                <button
-                  onClick={() => {
-                    setIsDropdownOpen(false);
-                    if (onDisconnect) onDisconnect();
-                  }}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-mono text-xs text-rose-600 hover:bg-rose-50 transition-colors text-left"
-                >
-                  <LogOut className="h-3.5 w-3.5 text-rose-500" />
-                  <span>Disconnect</span>
-                </button>
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      if (onDisconnect) onDisconnect();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg font-mono text-xs font-medium text-rose-500 hover:bg-rose-50 transition-colors text-left"
+                  >
+                    <LogOut className="h-4 w-4 text-rose-500" />
+                    <span>Disconnect</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -213,7 +205,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex h-9 items-center gap-2 rounded-full border border-[#FF4D26] bg-[#FF4D26] px-4 font-mono text-xs font-bold text-white shadow-sm hover:bg-[#E83E16] transition-all active:scale-[0.98]"
           >
             <Wallet className="h-3.5 w-3.5 text-white/90" />
-            <span>Connect MetaMask</span>
+            <span>Connect Wallet</span>
           </button>
         )}
       </div>

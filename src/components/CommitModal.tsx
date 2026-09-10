@@ -91,7 +91,7 @@ export const CommitModal: React.FC<CommitModalProps> = ({
             <div className="p-3 rounded-xl bg-orange-50 border border-orange-200/80 flex items-center gap-2 text-xs text-orange-800 font-sans">
               <span className="h-2 w-2 rounded-full bg-[#FF4D26] shrink-0" />
               <span>
-                <strong>MetaMask Verified:</strong> This commit will be signed and sealed into Solana L1.
+                <strong>Solana L1 Settlement:</strong> This commit will be signed and sealed into Solana L1.
               </span>
             </div>
           )}
