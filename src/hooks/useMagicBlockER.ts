@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ERTelemetry, Pixel, ActivityItem } from '../types/canvas';
+import { ERTelemetry, Pixel, ActivityItem, AuthMode } from '../types/canvas';
 import {
   MAGICBLOCK_DEVNET_ROUTER,
   CANVAS_ACCOUNT_PUBKEY,
@@ -11,9 +11,10 @@ import {
 interface UseMagicBlockERProps {
   onRemotePixel?: (pixel: Pixel) => void;
   userAddress?: string | null;
+  authMode?: AuthMode;
 }
 
-export function useMagicBlockER({ onRemotePixel, userAddress }: UseMagicBlockERProps) {
+export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'guest' }: UseMagicBlockERProps) {
   const [telemetry, setTelemetry] = useState<ERTelemetry>({
     blockTimeMs: 10,
     gasSpentUsd: 0.0,
@@ -24,15 +25,21 @@ export function useMagicBlockER({ onRemotePixel, userAddress }: UseMagicBlockERP
     delegatedAccount: CANVAS_ACCOUNT_PUBKEY,
     l1CommittedCount: 18,
     lastL1CommitHash: '5Kz7N2vC...49mP',
+    authMode,
   });
+
+  // Sync authMode to telemetry
+  useEffect(() => {
+    setTelemetry((prev) => ({ ...prev, authMode }));
+  }, [authMode]);
 
   const [activities, setActivities] = useState<ActivityItem[]>(() => {
     // Initial activity stream
     return [
-      { id: '1', x: 64, y: 64, color: '#2E5BFF', author: 'magic...b4a1', timestamp: Date.now() - 400 },
-      { id: '2', x: 65, y: 64, color: '#9945FF', author: '0xSola...98f2', timestamp: Date.now() - 320 },
-      { id: '3', x: 66, y: 64, color: '#14F195', author: 'blitz...33c9', timestamp: Date.now() - 210 },
-      { id: '4', x: 64, y: 65, color: '#00FF94', author: 'cyber...551d', timestamp: Date.now() - 80 },
+      { id: '1', x: 64, y: 64, color: '#FF4D26', author: 'magic...b4a1', timestamp: Date.now() - 400, isVerified: true },
+      { id: '2', x: 65, y: 64, color: '#4F46E5', author: '0xSola...98f2', timestamp: Date.now() - 320, isVerified: true },
+      { id: '3', x: 66, y: 64, color: '#14F195', author: 'blitz...33c9', timestamp: Date.now() - 210, isVerified: false },
+      { id: '4', x: 64, y: 65, color: '#00FF94', author: 'cyber...551d', timestamp: Date.now() - 80, isVerified: false },
     ];
   });
 
@@ -50,7 +57,8 @@ export function useMagicBlockER({ onRemotePixel, userAddress }: UseMagicBlockERP
   // Push placed pixel through the 10ms Ephemeral Rollup pipeline
   const streamPixel = useCallback(
     (x: number, y: number, color: string) => {
-      const authorName = userAddress ? userAddress : 'You (Session Key)';
+      const isVerified = authMode === 'live';
+      const authorName = userAddress ? userAddress : (isVerified ? 'Verified Artist' : 'Guest Artist');
       const txHash = generateTxHash();
 
       const newPixel: Pixel = {
@@ -61,6 +69,7 @@ export function useMagicBlockER({ onRemotePixel, userAddress }: UseMagicBlockERP
         timestamp: Date.now(),
         txHash,
         isERConfirmed: true,
+        isVerified,
       };
 
       pendingPixelsRef.current.push(newPixel);
@@ -70,7 +79,6 @@ export function useMagicBlockER({ onRemotePixel, userAddress }: UseMagicBlockERP
         ...prev,
         txCount: prev.txCount + 1,
         lastTxTime: Date.now(),
-        // On standard Solana, gas would be $0.002 per tx. On ER, it's 0!
       }));
 
       // Add to live activity feed
@@ -81,11 +89,12 @@ export function useMagicBlockER({ onRemotePixel, userAddress }: UseMagicBlockERP
         color,
         author: authorName,
         timestamp: Date.now(),
+        isVerified,
       };
 
       setActivities((prev) => [activity, ...prev.slice(0, 29)]);
     },
-    [userAddress]
+    [userAddress, authMode]
   );
 
   // Commit canvas state to Solana L1

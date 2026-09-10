@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, CheckCircle2, Layers, ExternalLink, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Pixel } from '../types/canvas';
+import { Pixel, AuthMode } from '../types/canvas';
 import { computeCanvasStateHash, shortAddress } from '../lib/magicblock';
 
 interface CommitModalProps {
@@ -21,6 +21,8 @@ interface CommitModalProps {
     timestamp: number;
     pixelCount: number;
   } | null;
+  authMode?: AuthMode;
+  onOpenPrivyModal?: () => void;
 }
 
 export const CommitModal: React.FC<CommitModalProps> = ({
@@ -30,6 +32,8 @@ export const CommitModal: React.FC<CommitModalProps> = ({
   onCommit,
   isCommitting,
   lastCommitResult,
+  authMode = 'guest',
+  onOpenPrivyModal,
 }) => {
   const [success, setSuccess] = useState(false);
 
@@ -81,6 +85,36 @@ export const CommitModal: React.FC<CommitModalProps> = ({
           <p className="text-zinc-600 font-[var(--font-body)] text-sm leading-relaxed">
             While drawing, strokes were processed at <strong>10ms with zero gas</strong> on MagicBlock's Ephemeral Rollup. Committing seals the entire collaborative state permanently into the Solana blockchain ledger.
           </p>
+
+          {/* Guest vs Live Notice */}
+          {authMode === 'guest' && !success && (
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                <span className="text-zinc-700 font-sans">
+                  You are in <strong>Guest Mode</strong>. Connect with Privy to verify your artist attribution onchain!
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenPrivyModal?.();
+                }}
+                className="text-xs font-bold text-brand-600 hover:text-brand-700 whitespace-nowrap font-mono"
+              >
+                Connect Privy →
+              </button>
+            </div>
+          )}
+
+          {authMode === 'live' && !success && (
+            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center gap-2 text-xs text-emerald-800 font-sans">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+              <span>
+                <strong>Live Privy Mode Active:</strong> This commit will be signed by your authenticated wallet.
+              </span>
+            </div>
+          )}
 
           {/* Metrics summary */}
           <div className="grid grid-cols-2 gap-2.5">

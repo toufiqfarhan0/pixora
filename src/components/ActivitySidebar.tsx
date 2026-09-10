@@ -59,8 +59,17 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({ activities, to
                     className="h-3.5 w-3.5 rounded-md shrink-0 border border-black/10 shadow-xs"
                     style={{ backgroundColor: act.color }}
                   />
-                  <span className="truncate text-zinc-700 text-[11px] font-medium">
+                  <span className="truncate text-zinc-700 text-[11px] font-medium flex items-center gap-1">
                     {shortAddress(act.author, 3)}
+                    {act.isVerified ? (
+                      <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200">
+                        Live ✓
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-normal text-zinc-400 bg-zinc-100 px-1 py-0.5 rounded">
+                        Guest
+                      </span>
+                    )}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-[10px] text-zinc-400 shrink-0">

@@ -6,6 +6,7 @@ export interface Pixel {
   timestamp: number;
   txHash?: string;
   isERConfirmed: boolean;
+  isVerified?: boolean;
 }
 
 export interface CanvasState {
@@ -15,6 +16,8 @@ export interface CanvasState {
 }
 
 export type ToolMode = 'pen' | 'brush' | 'eraser' | 'picker';
+
+export type AuthMode = 'guest' | 'live';
 
 export interface ERTelemetry {
   blockTimeMs: number;
@@ -26,6 +29,7 @@ export interface ERTelemetry {
   delegatedAccount: string;
   l1CommittedCount: number;
   lastL1CommitHash: string | null;
+  authMode?: AuthMode;
 }
 
 export interface ActivityItem {
@@ -36,6 +40,7 @@ export interface ActivityItem {
   author: string;
   timestamp: number;
   isMock?: boolean;
+  isVerified?: boolean;
 }
 
 export interface ColorPalette {

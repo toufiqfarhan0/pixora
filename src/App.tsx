@@ -10,7 +10,7 @@ import { HowItWorksPage } from './components/HowItWorksPage';
 import { PrivyWalletModal } from './components/PrivyWalletModal';
 import { useCanvas } from './hooks/useCanvas';
 import { useMagicBlockER } from './hooks/useMagicBlockER';
-import { ToolMode, Pixel } from './types/canvas';
+import { ToolMode, Pixel, AuthMode } from './types/canvas';
 import { DEFAULT_COLOR } from './lib/palette';
 
 const CANVAS_WIDTH = 128;
@@ -54,6 +54,7 @@ function createInitialArt(): Pixel[] {
       author: 'Genesis ER',
       timestamp: Date.now() - 100000,
       isERConfirmed: true,
+      isVerified: true,
     });
   });
 
@@ -64,10 +65,18 @@ export const App: React.FC = () => {
   // Navigation View: 'landing' | 'canvas' | 'how-it-works'
   const [currentView, setCurrentView] = useState<'landing' | 'canvas' | 'how-it-works'>('landing');
 
+  // Mode: 'guest' (Instant Free Canvas) vs 'live' (Privy Verified)
+  const initialGuestAddress = useMemo(
+    () => 'Guest_' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+    []
+  );
+  const [authMode, setAuthMode] = useState<AuthMode>('guest');
+  const [userAddress, setUserAddress] = useState<string>(initialGuestAddress);
+  const [loginMethod, setLoginMethod] = useState<string | null>(null);
+
   // Canvas interaction state
   const [selectedColor, setSelectedColor] = useState<string>(DEFAULT_COLOR);
   const [toolMode, setToolMode] = useState<ToolMode>('pen');
-  const [userAddress, setUserAddress] = useState<string | null>('7xK9...49mP');
   const [isCommitModalOpen, setIsCommitModalOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
 
@@ -84,6 +93,7 @@ export const App: React.FC = () => {
     lastCommitResult,
   } = useMagicBlockER({
     userAddress,
+    authMode,
     onRemotePixel: (p) => {
       setRemotePixel(p);
     },
@@ -148,8 +158,16 @@ export const App: React.FC = () => {
     a.click();
   };
 
-  const handleWalletConnected = (address: string) => {
+  const handleWalletConnected = (address: string, method: string) => {
     setUserAddress(address);
+    setLoginMethod(method);
+    setAuthMode('live');
+  };
+
+  const handleDisconnect = () => {
+    setUserAddress(initialGuestAddress);
+    setLoginMethod(null);
+    setAuthMode('guest');
   };
 
   return (
@@ -161,6 +179,7 @@ export const App: React.FC = () => {
         onOpenCommit={() => setIsCommitModalOpen(true)}
         onOpenWalletModal={() => setIsWalletModalOpen(true)}
         userAddress={userAddress}
+        authMode={authMode}
         isCommitting={isCommitting}
       />
 
@@ -238,6 +257,8 @@ export const App: React.FC = () => {
         onCommit={commitToSolanaL1}
         isCommitting={isCommitting}
         lastCommitResult={lastCommitResult}
+        authMode={authMode}
+        onOpenPrivyModal={() => setIsWalletModalOpen(true)}
       />
     </div>
   );
