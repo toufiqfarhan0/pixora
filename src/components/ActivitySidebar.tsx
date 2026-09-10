@@ -1,15 +1,29 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronLeft, MapPin, Radio, Sparkles } from 'lucide-react';
-import { ActivityItem } from '../types/canvas';
+import { ChevronRight, ChevronLeft, MapPin, Radio, Sparkles, CheckCircle2, Shield, User } from 'lucide-react';
+import { ActivityItem, AuthMode } from '../types/canvas';
 import { shortAddress } from '../lib/magicblock';
 
 interface ActivitySidebarProps {
   activities: ActivityItem[];
   totalPixels: number;
+  userAddress?: string | null;
+  authMode?: AuthMode;
+  loginMethod?: string | null;
 }
 
-export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({ activities, totalPixels }) => {
+export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
+  activities,
+  totalPixels,
+  userAddress,
+  authMode = 'live',
+  loginMethod,
+}) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Count user's personal pixels in recent activity
+  const userRecentPixels = activities.filter(
+    (a) => a.author === userAddress || (authMode === 'live' && a.isVerified && !a.isMock)
+  ).length;
 
   return (
     <aside
@@ -41,8 +55,47 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({ activities, to
           </span>
         </div>
 
-        {/* Live Pixel Placements */}
-        <div className="flex flex-col gap-1.5 overflow-y-auto pr-1 max-h-80">
+        {/* Active Artist Profile Card */}
+        <div
+          className={`p-3 rounded-xl border transition-all ${
+            authMode === 'live'
+              ? 'bg-emerald-50/70 border-emerald-200/80 text-emerald-950 shadow-2xs'
+              : 'bg-zinc-50 border-zinc-200/70 text-zinc-800'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-bold">
+              Your Artist Profile
+            </span>
+            <span
+              className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                authMode === 'live'
+                  ? 'bg-emerald-100/90 text-emerald-800 border border-emerald-300/50'
+                  : 'bg-zinc-200/70 text-zinc-600'
+              }`}
+            >
+              <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+              <span>Privy Verified</span>
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between text-xs font-[var(--font-mono)]">
+            <div className="flex items-center gap-1.5 truncate max-w-[170px]">
+              <span className="font-semibold text-zinc-900" title={userAddress || ''}>
+                {userAddress ? shortAddress(userAddress, 4) : 'MetaMask'}
+              </span>
+              <span className="text-[9px] text-emerald-700 bg-white/90 px-1.5 py-0.2 rounded border border-emerald-200/60 font-sans font-medium">
+                MetaMask
+              </span>
+            </div>
+            <span className="text-[10px] text-zinc-400 font-sans">
+              Signed Onchain
+            </span>
+          </div>
+        </div>
+
+        {/* Live Pixel Placements Stream */}
+        <div className="flex flex-col gap-1.5 overflow-y-auto pr-1 max-h-72">
           <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-[var(--font-mono)]">
             Live Stream
           </span>
@@ -59,41 +112,36 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({ activities, to
                     className="h-3.5 w-3.5 rounded-md shrink-0 border border-black/10 shadow-xs"
                     style={{ backgroundColor: act.color }}
                   />
-                  <span className="truncate text-zinc-700 text-[11px] font-medium flex items-center gap-1">
-                    {shortAddress(act.author, 3)}
-                    {act.isVerified ? (
-                      <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200">
-                        Live ✓
+                  <div className="flex flex-col min-w-0">
+                    <div className="flex items-center gap-1">
+                      <span className="font-semibold text-zinc-800 truncate max-w-[100px]" title={act.author}>
+                        {shortAddress(act.author, 3)}
                       </span>
-                    ) : (
-                      <span className="text-[9px] font-normal text-zinc-400 bg-zinc-100 px-1 py-0.5 rounded">
-                        Guest
-                      </span>
-                    )}
-                  </span>
+                      {act.isVerified && (
+                        <span className="inline-flex items-center text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded">
+                          Live ✓
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-zinc-400 font-sans">
+                      ({act.x}, {act.y})
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 text-[10px] text-zinc-400 shrink-0">
-                  <MapPin className="h-2.5 w-2.5 text-brand-600" />
-                  <span>
-                    ({act.x}, {act.y})
-                  </span>
+
+                <div className="text-right shrink-0">
+                  <span className="text-[10px] text-brand-600 font-bold block">10ms</span>
+                  <span className="text-[9px] text-zinc-400 font-sans">confirmed</span>
                 </div>
               </div>
             ))
           )}
         </div>
 
-        {/* Mini About Banner */}
-        <div className="mt-auto pt-2 border-t border-zinc-100">
-          <div className="p-3 rounded-xl bg-brand-50/70 border border-brand-100 flex flex-col gap-1">
-            <div className="flex items-center gap-1 text-[11px] font-bold text-brand-700 font-[var(--font-display)]">
-              <Sparkles className="h-3 w-3 text-brand-600" />
-              <span>Real-Time Engine</span>
-            </div>
-            <p className="text-[10px] text-zinc-600 leading-relaxed font-sans">
-              Powered by MagicBlock Ephemeral Rollups: zero-gas state commits with 10ms finality.
-            </p>
-          </div>
+        {/* Footer info */}
+        <div className="pt-2 border-t border-zinc-100 flex items-center justify-between text-[10px] text-zinc-400 font-mono">
+          <span>MagicBlock ER</span>
+          <span className="text-emerald-600 font-bold">Gas: $0.00</span>
         </div>
       </div>
     </aside>

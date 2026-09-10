@@ -190,6 +190,89 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
         </div>
       </section>
 
+      {/* MagicBlock Graveyard Resurrection Feature (Light Mode) */}
+      <section className="px-6 sm:px-12 max-w-5xl mx-auto pt-6 pb-2">
+        <div className="p-6 sm:p-7 rounded-2xl bg-white text-zinc-900 border border-zinc-200/90 shadow-popover relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-brand-50/50 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-zinc-100">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-2.5 py-1 rounded-md bg-brand-50 border border-brand-200 text-brand-700 font-mono text-[11px] font-bold uppercase tracking-wider">
+                MagicBlock Build Graveyard
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-mono text-[11px] font-semibold flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Resurrected &amp; Built by Pixora
+              </span>
+            </div>
+            <a
+              href="https://build.magicblock.app/graveyard?cat=Games&idea=pixel-canvas"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-mono text-zinc-500 hover:text-brand-600 transition-colors flex items-center gap-1.5 shrink-0"
+            >
+              <span>View Unclaimed Graveyard Idea</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
+
+          <div className="py-5">
+            <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 mb-1.5">
+              <span>CATEGORY: GAMES &amp; SOCIAL</span>
+              <span>·</span>
+              <span className="text-brand-600 font-semibold">OFFICIAL GRAVEYARD THESIS</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black font-[var(--font-display)] text-zinc-900 tracking-tight">
+              Massively Shared Pixel Canvas
+            </h3>
+            <p className="text-xs sm:text-sm text-zinc-600 mt-2 leading-relaxed max-w-3xl">
+              Web2 collaborative canvases captivated millions, but always died with their centralized servers. Deploying directly on Solana Layer 1 resulted in 400ms lag, wallet popup fatigue, and heavy gas costs. Pixora leverages MagicBlock Ephemeral Rollups to solve this thesis completely:
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-3.5 pt-4 border-t border-zinc-100 font-mono">
+            <div className="p-4 rounded-xl bg-rose-50/60 border border-rose-100/90 flex flex-col gap-1.5 shadow-2xs">
+              <div className="flex items-center gap-1.5 text-rose-600 text-xs font-bold">
+                <span>▸</span>
+                <span>The Web2 Flaw</span>
+              </div>
+              <p className="text-xs sm:text-sm font-bold text-zinc-900 font-[var(--font-display)]">
+                Shared canvases die with their servers
+              </p>
+              <span className="text-[11px] text-zinc-600 font-sans leading-relaxed">
+                Centralized servers eventually shut down or crash, erasing years of collective community artwork.
+              </span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-100/90 flex flex-col gap-1.5 shadow-2xs">
+              <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold">
+                <span>▸</span>
+                <span>The ER Breakthrough</span>
+              </div>
+              <p className="text-xs sm:text-sm font-bold text-zinc-900 font-[var(--font-display)]">
+                ER lands a million placements in 10ms
+              </p>
+              <span className="text-[11px] text-zinc-600 font-sans leading-relaxed">
+                MagicBlock micro-blocks confirm in 10ms with zero gas, allowing real-time fluid brush strokes.
+              </span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-brand-50/60 border border-brand-100/90 flex flex-col gap-1.5 shadow-2xs">
+              <div className="flex items-center gap-1.5 text-brand-600 text-xs font-bold">
+                <span>▸</span>
+                <span>The Blockchain Promise</span>
+              </div>
+              <p className="text-xs sm:text-sm font-bold text-zinc-900 font-[var(--font-display)]">
+                The canvas outlives any server
+              </p>
+              <span className="text-[11px] text-zinc-600 font-sans leading-relaxed">
+                Cryptographic Merkle state roots anchored to Solana L1 ensure the artwork is immortal onchain.
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Comparison Section: Solana L1 vs MagicBlock ER */}
       <section className="py-16 px-6 sm:px-12 max-w-5xl mx-auto border-t border-zinc-200/80">
         <div className="text-center max-w-xl mx-auto mb-12">
@@ -217,7 +300,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-rose-500 font-bold mt-0.5">✕</span>
-                <span><strong>Wallet Pop-up Hell:</strong> Phantom pops up asking for approval on every single dot placed.</span>
+                <span><strong>Wallet Pop-up Hell:</strong> Traditional wallets pop up asking for approval on every single dot placed.</span>
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-rose-500 font-bold mt-0.5">✕</span>
@@ -253,7 +336,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-emerald-500 font-bold mt-0.5">✓</span>
-                <span><strong>Session Delegation:</strong> Connect once via Privy or Phantom; no pop-ups during painting.</span>
+                <span><strong>Session Delegation:</strong> Connect once via Privy MetaMask; zero pop-ups during painting.</span>
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-emerald-500 font-bold mt-0.5">✓</span>

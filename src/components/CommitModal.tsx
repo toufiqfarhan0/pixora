@@ -32,7 +32,7 @@ export const CommitModal: React.FC<CommitModalProps> = ({
   onCommit,
   isCommitting,
   lastCommitResult,
-  authMode = 'guest',
+  authMode = 'live',
   onOpenPrivyModal,
 }) => {
   const [success, setSuccess] = useState(false);
@@ -86,32 +86,12 @@ export const CommitModal: React.FC<CommitModalProps> = ({
             While drawing, strokes were processed at <strong>10ms with zero gas</strong> on MagicBlock's Ephemeral Rollup. Committing seals the entire collaborative state permanently into the Solana blockchain ledger.
           </p>
 
-          {/* Guest vs Live Notice */}
-          {authMode === 'guest' && !success && (
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
-                <span className="text-zinc-700 font-sans">
-                  You are in <strong>Guest Mode</strong>. Connect with Privy to verify your artist attribution onchain!
-                </span>
-              </div>
-              <button
-                onClick={() => {
-                  onClose();
-                  onOpenPrivyModal?.();
-                }}
-                className="text-xs font-bold text-brand-600 hover:text-brand-700 whitespace-nowrap font-mono"
-              >
-                Connect Privy →
-              </button>
-            </div>
-          )}
-
-          {authMode === 'live' && !success && (
+          {/* Live Privy Notice */}
+          {!success && (
             <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center gap-2 text-xs text-emerald-800 font-sans">
               <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
               <span>
-                <strong>Live Privy Mode Active:</strong> This commit will be signed by your authenticated wallet.
+                <strong>Privy MetaMask Verified:</strong> This commit will be signed and sealed into Solana L1.
               </span>
             </div>
           )}
@@ -142,18 +122,23 @@ export const CommitModal: React.FC<CommitModalProps> = ({
           {success && lastCommitResult && (
             <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-2.5 animate-fade-in">
               <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div className="flex flex-col gap-0.5 min-w-0 font-sans">
-                <span className="font-bold text-zinc-900 text-sm font-[var(--font-display)]">
-                  Successfully Committed to Solana L1!
-                </span>
+              <div className="flex flex-col gap-1 min-w-0 font-sans">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-zinc-900 text-sm font-[var(--font-display)]">
+                    Successfully Committed to Solana L1!
+                  </span>
+                  <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full font-bold">
+                    Devnet Confirmed
+                  </span>
+                </div>
                 <p className="text-xs text-zinc-500 font-mono">
-                  Tx: {shortAddress(lastCommitResult.txHash, 8)}
+                  Receipt: {shortAddress(lastCommitResult.txHash, 8)}
                 </p>
                 <a
                   href={`https://explorer.solana.com/tx/${lastCommitResult.txHash}?cluster=devnet`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-emerald-700 font-semibold hover:underline mt-1"
+                  className="inline-flex items-center gap-1 text-xs text-emerald-700 font-semibold hover:underline mt-0.5"
                 >
                   View on Solana Explorer <ExternalLink className="h-3 w-3" />
                 </a>

@@ -75,18 +75,11 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ telemetry, hoveredPi
 
         {/* Session Mode Status Bar */}
         <div className="mt-2.5 pt-2 border-t border-zinc-100 flex items-center justify-between text-[10px] font-mono">
-          <span className="text-zinc-500">Mode:</span>
-          {telemetry.authMode === 'live' ? (
-            <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 pulse-indicator-mint" />
-              🟢 Live Privy Mode
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-              ⚡ Guest Mode (Instant)
-            </span>
-          )}
+          <span className="text-zinc-500">Auth:</span>
+          <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 pulse-indicator-mint" />
+            MetaMask Verified (Privy)
+          </span>
         </div>
 
         {/* Hovered Pixel Inspector */}

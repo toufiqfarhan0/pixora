@@ -17,7 +17,7 @@ export interface CanvasState {
 
 export type ToolMode = 'pen' | 'brush' | 'eraser' | 'picker';
 
-export type AuthMode = 'guest' | 'live';
+export type AuthMode = 'live';
 
 export interface ERTelemetry {
   blockTimeMs: number;

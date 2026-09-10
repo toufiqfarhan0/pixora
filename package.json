@@ -9,6 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@floating-ui/core": "^1.8.0",
+    "@floating-ui/utils": "^0.2.12",
+    "@privy-io/react-auth": "^3.42.0",
     "@solana/wallet-adapter-base": "^0.9.23",
     "@solana/wallet-adapter-react": "^0.15.35",
     "@solana/web3.js": "^1.98.0",

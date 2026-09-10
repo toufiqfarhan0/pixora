@@ -48,6 +48,74 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({
         </p>
       </div>
 
+      {/* Official MagicBlock Graveyard & Architecture Alignment (Light Mode) */}
+      <div className="bg-white text-zinc-900 rounded-2xl border border-zinc-200/90 p-6 sm:p-7 shadow-popover mb-12 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-brand-50/50 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-zinc-100">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2.5 py-1 rounded-md bg-brand-50 border border-brand-200 text-brand-700 font-mono text-[11px] font-bold uppercase tracking-wider">
+              MagicBlock Build Graveyard
+            </span>
+            <span className="text-xs font-mono text-zinc-600">
+              Idea: <strong className="text-zinc-900">Massively Shared Pixel Canvas</strong>
+            </span>
+          </div>
+          <div className="flex items-center gap-4 text-xs font-mono">
+            <a
+              href="https://build.magicblock.app/graveyard?cat=Games&idea=pixel-canvas"
+              target="_blank"
+              rel="noreferrer"
+              className="text-brand-600 hover:text-brand-700 font-semibold transition-colors flex items-center gap-1"
+            >
+              <span>Graveyard Idea</span>
+              <ExternalLink className="h-3 w-3" />
+            </a>
+            <a
+              href="https://docs.magicblock.gg/pages/get-started/introduction/why-magicblock"
+              target="_blank"
+              rel="noreferrer"
+              className="text-zinc-500 hover:text-zinc-800 transition-colors flex items-center gap-1"
+            >
+              <span>Why MagicBlock Docs</span>
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-3 gap-4 pt-5 font-mono">
+          <div className="p-4 rounded-xl bg-rose-50/60 border border-rose-100/90 flex flex-col gap-1.5 shadow-2xs">
+            <span className="text-xs text-rose-600 font-bold">▸ 01. The Problem</span>
+            <p className="text-xs sm:text-sm font-bold text-zinc-900 font-[var(--font-display)]">
+              Shared canvases die with their servers
+            </p>
+            <p className="text-[11px] text-zinc-600 font-sans leading-relaxed">
+              Traditional web2 canvases (like r/place) store state on centralized Redis/SQL databases. When hosting expires or servers crash, communal art is lost forever.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-100/90 flex flex-col gap-1.5 shadow-2xs">
+            <span className="text-xs text-emerald-600 font-bold">▸ 02. The Engine</span>
+            <p className="text-xs sm:text-sm font-bold text-zinc-900 font-[var(--font-display)]">
+              ER lands a million placements in 10ms
+            </p>
+            <p className="text-[11px] text-zinc-600 font-sans leading-relaxed">
+              Solana L1's 400ms latency and per-tx gas fees make continuous drawing impossible. MagicBlock Ephemeral Rollup executes at sub-10ms with zero gas per pixel.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-brand-50/60 border border-brand-100/90 flex flex-col gap-1.5 shadow-2xs">
+            <span className="text-xs text-brand-600 font-bold">▸ 03. The Result</span>
+            <p className="text-xs sm:text-sm font-bold text-zinc-900 font-[var(--font-display)]">
+              The canvas outlives any server
+            </p>
+            <p className="text-[11px] text-zinc-600 font-sans leading-relaxed">
+              Cryptographic state root hashes are committed directly to Solana Layer 1. The canvas is permanently immutable and exists on the decentralized blockchain forever.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Interactive Visual Flow Diagram */}
       <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-popover p-6 mb-16 overflow-x-auto">
         <h2 className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-bold mb-6">
@@ -123,7 +191,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({
               Session Delegation via Privy & Magic Router
             </h3>
             <p className="text-sm text-zinc-600 mt-1 leading-relaxed">
-              When you join Pixora, you authenticate once through Privy (using Email, Google, Twitter, or Phantom). Pixora delegates the canvas state account to MagicBlock’s Ephemeral Rollup. A short-lived session key is saved locally in your browser to sign each pixel placement without requiring wallet approvals.
+              When you join Pixora, you authenticate once through Privy using your MetaMask wallet. Pixora delegates the canvas state account to MagicBlock’s Ephemeral Rollup. A short-lived session key is saved locally in your browser to sign each pixel placement without requiring wallet approvals.
             </p>
           </div>
         </div>

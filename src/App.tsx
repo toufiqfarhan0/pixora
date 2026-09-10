@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { usePrivy } from '@privy-io/react-auth';
 import { Navbar } from './components/Navbar';
 import { CanvasViewport } from './components/CanvasViewport';
 import { Toolbar } from './components/Toolbar';
@@ -7,7 +8,6 @@ import { ActivitySidebar } from './components/ActivitySidebar';
 import { CommitModal } from './components/CommitModal';
 import { LandingHero } from './components/LandingHero';
 import { HowItWorksPage } from './components/HowItWorksPage';
-import { PrivyWalletModal } from './components/PrivyWalletModal';
 import { useCanvas } from './hooks/useCanvas';
 import { useMagicBlockER } from './hooks/useMagicBlockER';
 import { ToolMode, Pixel, AuthMode } from './types/canvas';
@@ -41,18 +41,18 @@ function createInitialArt(): Pixel[] {
     { x: -2, y: 4, c: '#00FF94' }, { x: -1, y: 4, c: '#00FF94' }, { x: 0, y: 4, c: '#00FF94' },
     { x: 1, y: 4, c: '#00FF94' }, { x: 2, y: 4, c: '#00FF94' }, { x: 3, y: 4, c: '#14F195' },
     { x: 4, y: 4, c: '#14F195' }, { x: 5, y: 4, c: '#14F195' },
-    // Bottom dots
+    // Bottom bar
     { x: -8, y: 8, c: '#FF4D26' }, { x: -7, y: 8, c: '#FF4D26' }, { x: -6, y: 8, c: '#FF4D26' },
     { x: 6, y: 8, c: '#4F46E5' }, { x: 7, y: 8, c: '#4F46E5' }, { x: 8, y: 8, c: '#4F46E5' },
   ];
 
-  pattern.forEach((p) => {
+  pattern.forEach(({ x, y, c }) => {
     pixels.push({
-      x: cx + p.x,
-      y: cy + p.y,
-      color: p.c,
-      author: 'Genesis ER',
-      timestamp: Date.now() - 100000,
+      x: cx + x,
+      y: cy + y,
+      color: c,
+      author: 'Solana Genesis',
+      timestamp: Date.now(),
       isERConfirmed: true,
       isVerified: true,
     });
@@ -65,20 +65,34 @@ export const App: React.FC = () => {
   // Navigation View: 'landing' | 'canvas' | 'how-it-works'
   const [currentView, setCurrentView] = useState<'landing' | 'canvas' | 'how-it-works'>('landing');
 
-  // Mode: 'guest' (Instant Free Canvas) vs 'live' (Privy Verified)
-  const initialGuestAddress = useMemo(
-    () => 'Guest_' + Math.random().toString(36).substring(2, 6).toUpperCase(),
-    []
+  // Privy Web3 Authentication (Exact BlitzMine reference - zero hardcoding)
+  const { ready, authenticated, user, login, logout } = usePrivy();
+
+  const solanaWallet = user?.linkedAccounts?.find(
+    (account) => account.type === 'wallet' && (account as any).chainType === 'solana'
   );
-  const [authMode, setAuthMode] = useState<AuthMode>('guest');
-  const [userAddress, setUserAddress] = useState<string>(initialGuestAddress);
-  const [loginMethod, setLoginMethod] = useState<string | null>(null);
+  const userAddress = authenticated
+    ? ((solanaWallet && 'address' in solanaWallet ? (solanaWallet as any).address : null) ??
+      user?.wallet?.address ??
+      null)
+    : null;
+
+  const loginMethod = authenticated
+    ? (user?.wallet?.walletClientType === 'metamask'
+        ? 'MetaMask'
+        : user?.wallet?.walletClientType === 'phantom'
+        ? 'Phantom'
+        : solanaWallet
+        ? 'Solana Wallet'
+        : 'Privy Verified')
+    : null;
+
+  const authMode: AuthMode = 'live';
 
   // Canvas interaction state
   const [selectedColor, setSelectedColor] = useState<string>(DEFAULT_COLOR);
   const [toolMode, setToolMode] = useState<ToolMode>('pen');
   const [isCommitModalOpen, setIsCommitModalOpen] = useState(false);
-  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
 
   // Initial starter art
   const initialPixels = useMemo(() => createInitialArt(), []);
@@ -99,12 +113,20 @@ export const App: React.FC = () => {
     },
   });
 
+  const [welcomeToast, setWelcomeToast] = useState<string | null>(null);
+
   // Local placement callback
   const handlePixelPlaced = useCallback(
     (x: number, y: number, color: string) => {
+      if (!authenticated) {
+        setWelcomeToast('🔒 Please connect your wallet via Privy to place pixels on Solana ER!');
+        setTimeout(() => setWelcomeToast(null), 4000);
+        if (ready) login();
+        return;
+      }
       streamPixel(x, y, color);
     },
-    [streamPixel]
+    [authenticated, ready, login, streamPixel]
   );
 
   // Canvas engine hook
@@ -128,12 +150,11 @@ export const App: React.FC = () => {
     initialPixels,
   });
 
-  // Convert pixelsMap to array
-  const allPixelsArray = useMemo(() => Array.from(pixelsMap.values()), [pixelsMap, telemetry.txCount]);
-
-  // Zoom controls
   const handleZoomIn = () => setScale((s) => Math.min(s * 1.3, 48));
   const handleZoomOut = () => setScale((s) => Math.max(s * 0.7, 1.5));
+
+  // Convert pixelsMap to array
+  const allPixelsArray = useMemo(() => Array.from(pixelsMap.values()), [pixelsMap]);
 
   // Export Canvas PNG
   const handleExportPNG = () => {
@@ -158,17 +179,15 @@ export const App: React.FC = () => {
     a.click();
   };
 
-  const handleWalletConnected = (address: string, method: string) => {
-    setUserAddress(address);
-    setLoginMethod(method);
-    setAuthMode('live');
-  };
+  const handleOpenPrivyModal = useCallback(() => {
+    if (ready) login();
+  }, [ready, login]);
 
-  const handleDisconnect = () => {
-    setUserAddress(initialGuestAddress);
-    setLoginMethod(null);
-    setAuthMode('guest');
-  };
+  const handleDisconnect = useCallback(() => {
+    logout();
+    setWelcomeToast('⚡ Disconnected. Connect your wallet via Privy to paint.');
+    setTimeout(() => setWelcomeToast(null), 3500);
+  }, [logout]);
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-[var(--bg-base)] flex flex-col font-[var(--font-body)]">
@@ -177,8 +196,10 @@ export const App: React.FC = () => {
         currentView={currentView}
         onNavigate={setCurrentView}
         onOpenCommit={() => setIsCommitModalOpen(true)}
-        onOpenWalletModal={() => setIsWalletModalOpen(true)}
+        onOpenWalletModal={handleOpenPrivyModal}
+        onDisconnect={handleDisconnect}
         userAddress={userAddress}
+        loginMethod={loginMethod}
         authMode={authMode}
         isCommitting={isCommitting}
       />
@@ -191,7 +212,7 @@ export const App: React.FC = () => {
             <LandingHero
               onLaunchCanvas={() => setCurrentView('canvas')}
               onOpenHowItWorks={() => setCurrentView('how-it-works')}
-              onOpenWalletModal={() => setIsWalletModalOpen(true)}
+              onOpenWalletModal={handleOpenPrivyModal}
               userAddress={userAddress}
             />
           </div>
@@ -237,17 +258,25 @@ export const App: React.FC = () => {
             <TelemetryHUD telemetry={telemetry} hoveredPixel={hoveredPixel} />
 
             {/* Top-right Activity Stream Sidebar */}
-            <ActivitySidebar activities={activities} totalPixels={allPixelsArray.length} />
+            <ActivitySidebar
+              activities={activities}
+              totalPixels={allPixelsArray.length}
+              userAddress={userAddress}
+              authMode={authMode}
+              loginMethod={loginMethod}
+            />
           </div>
         )}
       </div>
 
-      {/* Privy-style Embedded Wallet Auth Modal */}
-      <PrivyWalletModal
-        isOpen={isWalletModalOpen}
-        onClose={() => setIsWalletModalOpen(false)}
-        onConnected={handleWalletConnected}
-      />
+      {/* Welcome Notification Toast */}
+      {welcomeToast && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 py-2 px-4 rounded-xl bg-zinc-900 text-white text-xs font-semibold shadow-popover flex items-center gap-2 border border-zinc-700/80 animate-fade-in font-[var(--font-body)]">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          <span>{welcomeToast}</span>
+        </div>
+      )}
+
 
       {/* Commit to L1 Modal */}
       <CommitModal
@@ -258,7 +287,7 @@ export const App: React.FC = () => {
         isCommitting={isCommitting}
         lastCommitResult={lastCommitResult}
         authMode={authMode}
-        onOpenPrivyModal={() => setIsWalletModalOpen(true)}
+        onOpenPrivyModal={handleOpenPrivyModal}
       />
     </div>
   );

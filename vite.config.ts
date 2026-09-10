@@ -9,6 +9,24 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    strictPort: true,
     host: true,
+  },
+  build: {
+    rollupOptions: {
+      external: [
+        /^@solana-program\//,
+        '@solana/kit',
+        /^@farcaster\//,
+        /^permissionless/,
+        /^@base-ui\//,
+        /^valtio/,
+        /^react-aria/,
+        /^react-stately/,
+        /^@phosphor-icons\//,
+        /^@stripe\//,
+        '@stripe/stripe-js',
+      ],
+    },
   },
 });
