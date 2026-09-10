@@ -39,9 +39,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span className="font-bold text-base tracking-tight font-[var(--font-display)] text-zinc-900">
             Pixora
           </span>
-          <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand-50 text-brand-700 border border-brand-200 font-[var(--font-mono)] hidden sm:inline-block">
-            Blitz v8
-          </span>
         </button>
 
         {/* View Switcher Tabs */}

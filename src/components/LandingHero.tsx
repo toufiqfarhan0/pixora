@@ -48,14 +48,6 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-24 pb-20 px-6 sm:px-12 max-w-7xl mx-auto light-dot-grid">
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
-          {/* Eyebrow badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold mb-6 shadow-sm">
-            <span className="h-2 w-2 rounded-full bg-brand-600 pulse-indicator-mint" />
-            <span className="font-mono uppercase tracking-wider text-[11px]">
-              Solana Blitz v8 · Graveyard Resurrection #1
-            </span>
-          </div>
-
           {/* Main Headline */}
           <h1 className="text-4xl sm:text-6xl font-black tracking-tight font-[var(--font-display)] text-zinc-900 leading-[1.08] mb-6">
             The First <span className="text-brand-600 underline decoration-brand-200 decoration-wavy underline-offset-8">Sub-10ms</span> Massively Shared Onchain Canvas.
@@ -267,7 +259,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
       <section className="py-16 px-6 sm:px-12 max-w-6xl mx-auto border-t border-zinc-200/80">
         <div className="text-center max-w-xl mx-auto mb-12">
           <span className="text-xs font-mono uppercase tracking-widest text-brand-600 font-bold">
-            Built for Solana Blitz v8
+            High-Performance Architecture
           </span>
           <h2 className="text-2xl sm:text-3xl font-bold font-[var(--font-display)] text-zinc-900 mt-1">
             Engineered with Purpose
@@ -359,7 +351,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             GitHub Repo ↗
           </a>
         </div>
-        <p>© 2026 Pixora · Built for Solana Blitz v8 with MagicBlock Ephemeral Rollups.</p>
+        <p>© 2026 Pixora · Sub-10ms Massively Shared Onchain Canvas on Solana & MagicBlock.</p>
       </footer>
     </div>
   );

@@ -79,7 +79,7 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({ activities, to
           <div className="p-3 rounded-xl bg-brand-50/70 border border-brand-100 flex flex-col gap-1">
             <div className="flex items-center gap-1 text-[11px] font-bold text-brand-700 font-[var(--font-display)]">
               <Sparkles className="h-3 w-3 text-brand-600" />
-              <span>Solana Blitz v8 Entry</span>
+              <span>Real-Time Engine</span>
             </div>
             <p className="text-[10px] text-zinc-600 leading-relaxed font-sans">
               Powered by MagicBlock Ephemeral Rollups: zero-gas state commits with 10ms finality.
