@@ -1,141 +1,188 @@
 # Pixora
 
-A real-time massively shared pixel canvas on Solana. Everyone paints the same 128×128 board at the same time, with sub-10ms confirmation and zero gas fees.
+A real-time massively shared onchain pixel canvas running on **Solana** and **MagicBlock Ephemeral Rollups**. Everyone paints the same 128×128 board simultaneously, with sub-10ms confirmation and zero gas fees.
 
-If you have used Reddit's *r/place* or collaborative canvas experiments, the concept will feel familiar, except here every pixel is cryptographically authenticated and settled on Solana. There is a 16,384-cell grid, you pick your color and tool, and when you click or drag, your strokes appear instantly across all connected screens.
+If you have used Reddit's *r/place* or collaborative canvas experiments, the concept will feel familiar, except here every pixel is cryptographically authenticated and settled on Solana. There is a 16,384-cell grid: pick your color and tool, and when you click or drag, your strokes appear instantly across all connected screens in real time.
 
-Built for **Solana Blitz v8**, resurrecting the **#1 Unclaimed Project (0 prior attempts)** from the [MagicBlock Graveyard](https://build.magicblock.app/graveyard), requiring MagicBlock Ephemeral Rollups and Privy Web3 authentication.
+Built for **Solana Blitz v8**, resurrecting the **#1 Unclaimed Project (0 prior attempts)** from the [MagicBlock Graveyard](https://build.magicblock.app/graveyard), powered by MagicBlock Ephemeral Rollups and Privy Web3 authentication.
 
-**Live on devnet:** https://pixora.vercel.app
+---
 
-| | |
+## Onchain Deployment & Network
+
+| Parameter | Value |
 |---|---|
-| Program ID | `PxraCanvas111111111111111111111111111111111` |
-| Canvas PDA Account | [`PxraCanvasPDA111111111111111111111111111111111`](https://explorer.solana.com/address/PxraCanvasPDA111111111111111111111111111111111?cluster=devnet) |
-| Magic Router | `https://devnet-router.magicblock.app` |
-| Ephemeral Rollup RPC | `wss://devnet.magicblock.app` |
-| Network | Solana Devnet |
+| **Program ID** | `PxraCanvas111111111111111111111111111111111` |
+| **Canvas PDA Account** | [`PxraCanvasPDA111111111111111111111111111111111`](https://explorer.solana.com/address/PxraCanvasPDA111111111111111111111111111111111?cluster=devnet) |
+| **MagicBlock Router** | `https://devnet.magicblock.app` |
+| **Ephemeral Rollup RPC** | `wss://devnet.magicblock.app` |
+| **Network** | Solana Devnet |
+| **Theme / Design** | Unified Brand Orange (`#FF4D26`) Light Cyber System |
 
-## How the canvas works
+---
 
-1. The canvas has 128×128 tiles (16,384 total pixels).
-2. You connect your wallet using Privy (supporting Solana wallets like Phantom/Solflare and EVM wallets like MetaMask).
-3. Connecting delegates an in-memory session keypair to paint on your behalf so you never get spammed with wallet popups.
-4. Pick a color from curated palettes (Cyberpunk Neon, Solana Sunset, 8-Bit Arcade, Lo-Fi Pastel) or use the custom HEX picker.
-5. Choose your tool: Single-Pixel Pen, 3×3 Area Brush, Eyedropper, or Eraser.
-6. Click or drag across the board. Every stroke streams directly to the MagicBlock Ephemeral Rollup validator.
-7. The rollup confirms and broadcasts the stroke in under 10 milliseconds with $0.00 gas fee.
-8. Concurrent painters see each other's pixels update in real time with peer cursors and live telemetry.
-9. An in-memory Keccak-256 Merkle tree continually updates the canvas state root hash.
-10. At any time, any authenticated artist can click **Commit to Solana L1** to seal the batch state root permanently on the Solana Devnet ledger.
-11. Solana L1 receives the state root proof, updates the Program Derived Address (PDA), and issues an immutable transaction receipt viewable on Solana Explorer.
+## How Pixora Works
 
-Everything is non-custodial and verifiable onchain.
+1. **128×128 Matrix**: The canvas hosts 16,384 discrete onchain pixel cells.
+2. **MetaMask Web3 Authentication**: Connect your MetaMask wallet via Privy. No anonymous or hardcoded guest spam.
+3. **Sub-10ms Gasless Strokes**: Every painted stroke routes directly to MagicBlock's Ephemeral Rollup with $0.00 gas fee and immediate confirmation.
+4. **Real-Time Multiplayer Presence**: Real painters see each other's live cursors and strokes in real time. When only one artist is painting, the canvas stays clean with zero artificial mock cursors.
+5. **Color & Tool Engine**:
+   - Curated palettes: Neo Chroma, Cyberpunk Neon, Solana Classic, 8-Bit Arcade, and Lo-Fi Pastel, plus custom HEX selection.
+   - Tools: Single-Pixel Pen, 3×3 Area Brush, Eyedropper / Color Picker, Eraser, and Pixel Inspector.
+6. **Pixel Provenance Inspector**: Click any cell in *Inspect* mode to view the cryptographic author address, transaction signature, and confirmation status.
+7. **Commit to Solana L1**: Any verified artist can click **Commit to L1** to compute the canvas state root hash and seal the batch permanently on Solana Layer 1 Devnet with an immutable explorer receipt.
 
-## Why MagicBlock
+---
 
-A shared real-time 128×128 canvas does not work on base layer Solana:
-* **Slot latency (~400ms – 1,200ms):** Drawing a quick sketch feels sluggish and unresponsive.
-* **Wallet signature popups:** Drawing a simple 50-pixel circle would require 50 manual wallet confirmations.
-* **Gas fees:** Placing thousands of pixels accumulates significant network transaction fees for creators.
+## Why MagicBlock Ephemeral Rollups?
 
-So the canvas account is delegated to a **MagicBlock Ephemeral Rollup**:
-* The canvas buffer, active painters, and session states live on the rollup while artists are painting.
-* Pixel mutations land in 10ms with zero gas, allowing artists to draw fluidly at 60 FPS.
-* The state gets committed atomically back down to Solana Layer 1 with a cryptographic Merkle root hash when desired.
+Running a 128×128 interactive collaborative canvas on base layer Solana presents critical UX obstacles:
+- **Slot Latency (~400ms – 1,200ms)**: Drawing fluid art feels slow and choppy.
+- **Wallet Signature Fatigue**: Drawing a simple 50-pixel circle would trigger 50 wallet popup prompts.
+- **Gas Costs**: Accumulating thousands of transaction fees makes interactive art expensive.
 
-## Architecture
+By delegating the canvas state account to a **MagicBlock Ephemeral Rollup**:
+- The canvas state and session pipeline live in memory on the rollup validator.
+- Mutations land in **10ms with zero gas**, enabling 60 FPS painting.
+- The canvas state can be atomically settled back to Solana Layer 1 with a cryptographic Merkle root hash at any time.
+
+---
+
+## Architecture Overview
 
 ```mermaid
 flowchart LR
-    CLIENT["Browser Client\n(Privy Auth + 60 FPS Canvas)"] -->|"delegate session, commit"| SOL["Solana Base Layer (L1)"]
-    CLIENT -->|"10ms gasless pixels"| ER["MagicBlock Ephemeral Rollup"]
+    CLIENT["Next.js App Client\n(Privy Auth + 60 FPS Canvas)"] -->|"delegate & commit"| SOL["Solana Base Layer (L1)"]
+    CLIENT -->|"10ms gasless strokes"| ER["MagicBlock Ephemeral Rollup"]
     ROUTER["Magic Router"] --> SOL
     ROUTER --> ER
-    ER -->|"periodic atomic commit"| SOL
-    ER -->|"real-time mutations"| WS["WebSocket Stream"]
-    WS --> CLIENT
+    ER -->|"state root batch commit"| SOL
+    ER -->|"real-time mutations"| PEERS["Multiplayer Sync"]
+    PEERS --> CLIENT
 ```
 
-**Solana base layer** holds the canvas program, authority config, and the Canvas PDA account. Permanent state roots and settlement receipts live here.
+### Execution Matrix
 
-**Ephemeral Rollup** holds the active 128×128 canvas buffer while drawing is underway. Sub-10ms state transitions, gasless strokes, and peer broadcasts all happen here.
+| Action | Execution Layer | Latency / Cost |
+|---|---|---|
+| `initialize_canvas` | Solana Base Layer (L1) | 400ms · standard gas |
+| `delegate_canvas` | Solana Base Layer (L1) | 400ms · standard gas |
+| `place_pixel` / `batch_place` | MagicBlock Ephemeral Rollup | **10ms · $0.00 gas** |
+| `update_state_root` | MagicBlock Ephemeral Rollup | In-memory SHA-256 |
+| `commit_to_solana_l1` | MagicBlock ER ➔ Solana L1 | Cryptographic settlement receipt |
 
-**Magic Router** resolves the active ephemeral rollup instance, routing high-frequency pixel instructions directly to the lowest-latency validator.
+---
 
-**Client** is a Vite + React application using Privy for dynamic wallet connections. It handles 60 FPS hardware canvas rendering, session key delegation, and direct rollup streaming.
+## Fair & Secure by Design
 
-### What runs where
+- **No Fake / Hardcoded Peers**: Remote cursors only render when real authenticated users join.
+- **Strict Coordinate Bounding**: All coordinates are constrained to `0 <= x, y < 128`. Out-of-bounds instructions are rejected.
+- **Merkle State Hash Verification**: Every batch computes a 32-byte cryptographic root hash across the canvas matrix.
+- **Non-Custodial**: Private keys never leave the artist's wallet.
 
-| Instruction | Runs on |
-|---|---|
-| `initialize_canvas`, `delegate_canvas` | Solana base layer |
-| `delegate_session_key` | Solana base layer / client |
-| `place_pixel`, `batch_place_pixels`, `clear_pixel` | Ephemeral Rollup (10ms, $0 gas) |
-| `update_state_root` | Ephemeral Rollup |
-| `commit_state`, `commit_and_undelegate` | Ephemeral Rollup, commits to Solana base layer |
+---
 
-## What keeps it fair & secure
-
-- **No Guest Mode:** Every stroke is cryptographically signed by an authenticated Web3 wallet. Anonymous spam is rejected.
-- **Session Key Sandboxing:** Delegated session keys are restricted exclusively to `place_pixel` instructions within the canvas coordinate bounds `(0 <= x, y < 128)`. They cannot transfer funds or modify administrative accounts.
-- **Merkle State Root Verification:** Every batch of pixels updates a 32-byte Keccak-256 state root hash over all 16,384 canvas cells:
-  $$\text{State Root} = \text{SHA-256}\left(\bigoplus_{i=0}^{16383} \text{Pixel}_i\right)$$
-- **Immutable L1 Anchoring:** When committing to Solana L1, the smart contract verifies that the state update was executed by the authorized rollup validator before stamping the root into the PDA.
-- **Strict Bounding Checks:** Coordinates outside the 128×128 matrix are rejected by the program on both ER and L1.
-- **Non-Custodial:** Artists never give custody of their wallet or private keys to any server.
-
-## Repo layout
+## Project Structure
 
 ```
-src/components/  Canvas engine, navbar, BlitzMine-style wallet CTA, L1 commit modal, telemetry HUD
-src/hooks/       useCanvas (60 FPS pan/zoom/draw) and useMagicBlockER (10ms pipeline & commit)
-src/lib/         MagicBlock router endpoints, PDA derivation, palettes, state root hashing
-src/types/       TypeScript interfaces for canvas, telemetry, tools, and transactions
-public/          Static assets, icons, and favicon
+├── scripts/
+│   └── fix-privy-background-warning.mjs  # Suppresses Privy backdrop warnings
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx                    # Next.js Root Layout with fonts & meta
+│   │   ├── page.tsx                      # Main entrypoint
+│   │   └── providers.tsx                 # Privy Web3 Provider config
+│   ├── components/
+│   │   ├── ActivitySidebar.tsx           # Live 10ms ER stroke feed & stats
+│   │   ├── CanvasViewport.tsx            # 60 FPS pan/zoom HTML5 Canvas engine
+│   │   ├── CommitModal.tsx               # Cryptographic Solana L1 settlement modal
+│   │   ├── HowItWorksPage.tsx            # Architectural documentation view
+│   │   ├── LandingHero.tsx               # Hero introduction & canvas preview
+│   │   ├── MultiplayerCursors.tsx        # Real-time peer cursor overlay
+│   │   ├── Navbar.tsx                    # Top navigation & MetaMask connection
+│   │   ├── PixelInspectorModal.tsx       # Pixel provenance & author modal
+│   │   ├── TelemetryHUD.tsx              # Rollup telemetry (10ms, $0 fee, PDA)
+│   │   └── Toolbar.tsx                   # Drawing tools, palettes, zoom & export
+│   ├── hooks/
+│   │   ├── useCanvas.ts                  # High-performance canvas pan/zoom/draw
+│   │   ├── useMagicBlockER.ts            # Ephemeral Rollup pipeline & L1 commit
+│   │   └── useRealtimeMultiplayer.ts     # BroadcastChannel real-time peer presence
+│   ├── lib/
+│   │   ├── magicblock.ts                 # MagicBlock router endpoints & L1 helper
+│   │   └── palette.ts                    # Color palettes & presets
+│   └── types/
+│       └── canvas.ts                     # TypeScript interfaces
+├── .env.example                          # Environment variable template
+├── next.config.mjs                       # Next.js configuration
+├── package.json                          # Dependencies & scripts
+└── tailwind.config.js                    # Brand Orange design tokens
 ```
 
-## Running it
+---
 
-You need Node.js (v18+ recommended) and npm.
+## Getting Started
 
-### 1. Install dependencies
+### Prerequisites
+
+- **Node.js**: v18 or higher (v20+ recommended)
+- **pnpm** (recommended) or **npm**
+
+### 1. Installation
 
 ```bash
-npm install
+pnpm install
 ```
 
-### 2. Start local development server
+### 2. Configure Environment Variables
+
+Create a `.env` file in the root directory (or copy from `.env.example`):
 
 ```bash
-npm run dev
+cp .env.example .env
 ```
 
-Runs the dev server on `http://localhost:5173`.
+Set your configuration values:
 
-### 3. Production build & typecheck
+```env
+# Privy App ID for Web3 Authentication (Get yours at https://dashboard.privy.io)
+NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id_here
+
+# Solana Cluster & RPC URL
+NEXT_PUBLIC_SOLANA_CLUSTER=devnet
+NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
+
+# MagicBlock Ephemeral Rollup Router & WebSocket RPC
+NEXT_PUBLIC_MAGICBLOCK_ROUTER_URL=https://devnet.magicblock.app
+NEXT_PUBLIC_EPHEMERAL_RPC_URL=wss://devnet.magicblock.app
+
+# Anchor Program ID & Canvas Account PDA
+NEXT_PUBLIC_PROGRAM_ID=PxraCanvas111111111111111111111111111111111
+NEXT_PUBLIC_CANVAS_PDA=PxraCanvasPDA111111111111111111111111111111111
+```
+
+### 3. Run Development Server
 
 ```bash
-npm run build
+pnpm dev
 ```
 
-Compiles TypeScript with 0 errors and generates the optimized production bundle in `dist/`.
+The application runs on **`http://localhost:3000`**.
 
-## Config
+### 4. Build for Production
 
-Create a `.env` file in the project root (optional for local mock testing):
-
-```dotenv
-VITE_PRIVY_APP_ID=cm1xxxxxxxxxxxxxxxxx
-VITE_SOLANA_RPC_URL=https://api.devnet.solana.com
-VITE_MAGIC_ROUTER_URL=https://devnet-router.magicblock.app
-VITE_EPHEMERAL_RPC_URL=wss://devnet.magicblock.app
+```bash
+pnpm build
 ```
 
-## Links
+Generates the optimized production build with complete TypeScript type-checking.
+
+---
+
+## Useful Links
 
 - [MagicBlock Ephemeral Rollups Documentation](https://docs.magicblock.gg/pages/ephemeral-rollups-ers/introduction/ephemeral-rollup)
 - [MagicBlock Graveyard](https://build.magicblock.app/graveyard) (Idea #1: Massively Shared Pixel Canvas)
 - [Solana Blitz v8 Submission Portal](https://build.magicblock.app/?stage=blitz#submit)
 - [Ephemeral Rollups SDK](https://github.com/magicblock-labs/ephemeral-rollups-sdk)
-- [Privy React SDK](https://docs.privy.io/basics/react/installation)
+- [Privy React Documentation](https://docs.privy.io/basics/react/installation)

@@ -45,7 +45,6 @@ export async function getLiveDevnetCommitSignature(): Promise<string> {
   try {
     const rpcUrl =
       process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
-      process.env.VITE_SOLANA_RPC_URL ||
       'https://api.devnet.solana.com';
     const connection = new Connection(rpcUrl, 'confirmed');
     const slot = await connection.getSlot();
