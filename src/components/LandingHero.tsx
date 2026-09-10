@@ -11,6 +11,7 @@ import {
   Cpu,
   MousePointer,
 } from 'lucide-react';
+import { PixoraLogo } from './PixoraLogo';
 
 interface LandingHeroProps {
   onLaunchCanvas: () => void;
@@ -48,6 +49,14 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-24 pb-20 px-6 sm:px-12 max-w-7xl mx-auto light-dot-grid">
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
+          {/* Brand Emblem */}
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white border border-zinc-200 shadow-subtle mb-6 transition-transform hover:scale-[1.02]">
+            <PixoraLogo size={24} />
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 font-[var(--font-display)]">
+              Pixora · Powered by MagicBlock ER
+            </span>
+          </div>
+
           {/* Main Headline */}
           <h1 className="text-4xl sm:text-6xl font-black tracking-tight font-[var(--font-display)] text-zinc-900 leading-[1.08] mb-6">
             The First <span className="text-brand-600 underline decoration-brand-200 decoration-wavy underline-offset-8">Sub-10ms</span> Massively Shared Onchain Canvas.
@@ -325,6 +334,10 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
       {/* Footer */}
       <footer className="border-t border-zinc-200/80 py-10 px-6 text-center text-xs text-zinc-400 font-mono">
+        <div className="flex items-center justify-center gap-2.5 mb-4">
+          <PixoraLogo size={24} />
+          <span className="font-bold text-sm tracking-tight text-zinc-800 font-[var(--font-display)]">Pixora</span>
+        </div>
         <div className="flex flex-wrap items-center justify-center gap-6 mb-3">
           <a
             href="https://build.magicblock.app/graveyard"

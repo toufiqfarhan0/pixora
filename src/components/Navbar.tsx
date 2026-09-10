@@ -2,6 +2,7 @@ import React from 'react';
 import { Layers, ShieldCheck, CheckCircle2, Cpu, ArrowLeft } from 'lucide-react';
 import { shortAddress } from '../lib/magicblock';
 import { AuthMode } from '../types/canvas';
+import { PixoraLogo } from './PixoraLogo';
 
 interface NavbarProps {
   currentView: 'landing' | 'canvas' | 'how-it-works';
@@ -30,15 +31,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={() => onNavigate('landing')}
           className="flex items-center gap-2 text-left hover:opacity-85 transition-opacity"
         >
-          {/* Logo Mark: Architectural Kinetic Pixel Glyph */}
-          <div className="h-7 w-7 rounded-lg bg-zinc-900 flex items-center justify-center shadow-sm p-1.5">
-            <div className="grid grid-cols-2 gap-0.5 w-full h-full">
-              <div className="rounded-[1.5px] bg-brand-500" />
-              <div className="rounded-[1.5px] bg-white/90" />
-              <div className="rounded-[1.5px] bg-white/40" />
-              <div className="rounded-[1.5px] bg-brand-500/80" />
-            </div>
-          </div>
+          {/* Official QuiverAI Isometric Brand Mark */}
+          <PixoraLogo size={32} className="shrink-0 transition-transform group-hover:scale-105" />
           <span className="font-bold text-base tracking-tight font-[var(--font-display)] text-zinc-900">
             Pixora
           </span>
