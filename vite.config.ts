@@ -12,6 +12,9 @@ export default defineConfig({
     strictPort: true,
     host: true,
   },
+  optimizeDeps: {
+    exclude: ['@privy-io/react-auth'],
+  },
   build: {
     rollupOptions: {
       external: [
