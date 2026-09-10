@@ -47,7 +47,7 @@ export const CommitModal: React.FC<CommitModalProps> = ({
         particleCount: 90,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#FF4D26', '#10B981', '#4F46E5', '#EC4899', '#F59E0B'],
+        colors: ['#FF4D26', '#4F46E5', '#EC4899', '#F59E0B', '#A855F7'],
       });
     }
   };
@@ -86,12 +86,12 @@ export const CommitModal: React.FC<CommitModalProps> = ({
             While drawing, strokes were processed at <strong>10ms with zero gas</strong> on MagicBlock's Ephemeral Rollup. Committing seals the entire collaborative state permanently into the Solana blockchain ledger.
           </p>
 
-          {/* Live Privy Notice */}
+          {/* Live Notice */}
           {!success && (
-            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center gap-2 text-xs text-emerald-800 font-sans">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+            <div className="p-3 rounded-xl bg-orange-50 border border-orange-200/80 flex items-center gap-2 text-xs text-orange-800 font-sans">
+              <span className="h-2 w-2 rounded-full bg-[#FF4D26] shrink-0" />
               <span>
-                <strong>Privy MetaMask Verified:</strong> This commit will be signed and sealed into Solana L1.
+                <strong>MetaMask Verified:</strong> This commit will be signed and sealed into Solana L1.
               </span>
             </div>
           )}
@@ -104,7 +104,7 @@ export const CommitModal: React.FC<CommitModalProps> = ({
             </div>
             <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-100">
               <span className="text-[10px] text-zinc-400 uppercase font-bold">Gas Saved on ER</span>
-              <p className="text-lg font-bold text-emerald-600 mt-0.5">
+              <p className="text-lg font-bold text-[#FF4D26] mt-0.5">
                 ${(pixels.length * 0.002).toFixed(2)} USD
               </p>
             </div>
@@ -120,14 +120,14 @@ export const CommitModal: React.FC<CommitModalProps> = ({
 
           {/* Success Proof Banner */}
           {success && lastCommitResult && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-2.5 animate-fade-in">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-xl bg-orange-50 border border-orange-200 flex items-start gap-2.5 animate-fade-in">
+              <CheckCircle2 className="h-5 w-5 text-[#FF4D26] shrink-0 mt-0.5" />
               <div className="flex flex-col gap-1 min-w-0 font-sans">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-zinc-900 text-sm font-[var(--font-display)]">
                     Successfully Committed to Solana L1!
                   </span>
-                  <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full font-bold">
+                  <span className="text-[10px] font-mono text-[#FF4D26] bg-orange-100/80 px-2 py-0.5 rounded-full font-bold">
                     Devnet Confirmed
                   </span>
                 </div>
@@ -138,7 +138,7 @@ export const CommitModal: React.FC<CommitModalProps> = ({
                   href={`https://explorer.solana.com/tx/${lastCommitResult.txHash}?cluster=devnet`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-emerald-700 font-semibold hover:underline mt-0.5"
+                  className="inline-flex items-center gap-1 text-xs text-[#FF4D26] font-semibold hover:underline mt-0.5"
                 >
                   View on Solana Explorer <ExternalLink className="h-3 w-3" />
                 </a>
@@ -165,7 +165,7 @@ export const CommitModal: React.FC<CommitModalProps> = ({
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-3.5 w-3.5 text-emerald-300" />
+                  <Sparkles className="h-3.5 w-3.5 text-white/80" />
                   <span>Confirm L1 Commit</span>
                 </>
               )}

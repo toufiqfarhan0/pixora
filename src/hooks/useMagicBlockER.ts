@@ -18,13 +18,13 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
   const [telemetry, setTelemetry] = useState<ERTelemetry>({
     blockTimeMs: 10,
     gasSpentUsd: 0.0,
-    txCount: 1420, // initial simulated txns to feel active
+    txCount: 0, // Real transaction count, starts at 0
     lastTxTime: null,
     status: 'active',
     activeRollupNode: 'magic-router-er-node-01.us-east.magicblock.app',
     delegatedAccount: CANVAS_ACCOUNT_PUBKEY,
-    l1CommittedCount: 18,
-    lastL1CommitHash: '5Kz7N2vC...49mP',
+    l1CommittedCount: 0,
+    lastL1CommitHash: 'None yet',
     authMode,
   });
 
@@ -33,15 +33,8 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     setTelemetry((prev) => ({ ...prev, authMode }));
   }, [authMode]);
 
-  const [activities, setActivities] = useState<ActivityItem[]>(() => {
-    // Initial activity stream
-    return [
-      { id: '1', x: 64, y: 64, color: '#FF4D26', author: 'magic...b4a1', timestamp: Date.now() - 400, isVerified: true },
-      { id: '2', x: 65, y: 64, color: '#4F46E5', author: 'sol...98f2', timestamp: Date.now() - 320, isVerified: true },
-      { id: '3', x: 66, y: 64, color: '#14F195', author: 'blitz...33c9', timestamp: Date.now() - 210, isVerified: false },
-      { id: '4', x: 64, y: 65, color: '#00FF94', author: 'cyber...551d', timestamp: Date.now() - 80, isVerified: false },
-    ];
-  });
+  // Real activities stream (starts empty, only real strokes from connected users)
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
 
   const [isCommitting, setIsCommitting] = useState(false);
   const [lastCommitResult, setLastCommitResult] = useState<{
@@ -56,8 +49,8 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
 
   // Push placed pixel through the 10ms Ephemeral Rollup pipeline
   const streamPixel = useCallback(
-    (x: number, y: number, color: string) => {
-      const authorName = userAddress ? userAddress : 'Verified Artist';
+    (x: number, y: number, color: string): Pixel => {
+      const authorName = userAddress ? userAddress : 'MetaMask Artist';
       const txHash = generateTxHash();
 
       const newPixel: Pixel = {
@@ -92,9 +85,32 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
       };
 
       setActivities((prev) => [activity, ...prev.slice(0, 29)]);
+
+      return newPixel;
     },
     [userAddress, authMode]
   );
+
+  // Record pixel from a remote peer who painted
+  const recordRemotePixel = useCallback((pixel: Pixel) => {
+    setTelemetry((prev) => ({
+      ...prev,
+      txCount: prev.txCount + 1,
+      lastTxTime: Date.now(),
+    }));
+
+    const activity: ActivityItem = {
+      id: (pixel.txHash || generateTxHash()).slice(0, 10),
+      x: pixel.x,
+      y: pixel.y,
+      color: pixel.color,
+      author: pixel.author,
+      timestamp: pixel.timestamp || Date.now(),
+      isVerified: pixel.isVerified ?? true,
+    };
+
+    setActivities((prev) => [activity, ...prev.slice(0, 29)]);
+  }, []);
 
   // Commit canvas state to Solana L1
   const commitToSolanaL1 = useCallback(async (allPixels: Pixel[]) => {
@@ -127,13 +143,11 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     }
   }, []);
 
-  // Note: Automatic mock peer strokes disabled so pixel count only reflects real user actions.
-  // Real peer synchronization can be attached here via onRemotePixel when connected to a live ER websocket.
-
   return {
     telemetry,
     activities,
     streamPixel,
+    recordRemotePixel,
     commitToSolanaL1,
     isCommitting,
     lastCommitResult,

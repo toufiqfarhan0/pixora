@@ -45,7 +45,7 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
           <div className="flex items-center gap-1.5 font-[var(--font-mono)]">
-            <Radio className="h-3.5 w-3.5 text-emerald-500 pulse-indicator-mint" />
+            <Radio className="h-3.5 w-3.5 text-[#FF4D26] pulse-indicator-brand" />
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-900">
               10ms ER Stream
             </span>
@@ -59,7 +59,7 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
         <div
           className={`p-3 rounded-xl border transition-all ${
             authMode === 'live'
-              ? 'bg-emerald-50/70 border-emerald-200/80 text-emerald-950 shadow-2xs'
+              ? 'bg-orange-50/70 border-orange-200/80 text-orange-950 shadow-2xs'
               : 'bg-zinc-50 border-zinc-200/70 text-zinc-800'
           }`}
         >
@@ -70,12 +70,12 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
             <span
               className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                 authMode === 'live'
-                  ? 'bg-emerald-100/90 text-emerald-800 border border-emerald-300/50'
+                  ? 'bg-orange-100/90 text-[#FF4D26] border border-orange-300/50'
                   : 'bg-zinc-200/70 text-zinc-600'
               }`}
             >
-              <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-              <span>Privy Verified</span>
+              <CheckCircle2 className="h-3 w-3 text-[#FF4D26]" />
+              <span>MetaMask Verified</span>
             </span>
           </div>
 
@@ -84,7 +84,7 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
               <span className="font-semibold text-zinc-900" title={userAddress || ''}>
                 {userAddress ? shortAddress(userAddress, 4) : 'MetaMask'}
               </span>
-              <span className="text-[9px] text-emerald-700 bg-white/90 px-1.5 py-0.2 rounded border border-emerald-200/60 font-sans font-medium">
+              <span className="text-[9px] text-[#FF4D26] bg-white/90 px-1.5 py-0.2 rounded border border-orange-200/60 font-sans font-medium">
                 MetaMask
               </span>
             </div>
@@ -100,7 +100,12 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
             Live Stream
           </span>
           {activities.length === 0 ? (
-            <p className="text-xs text-zinc-400 py-4 text-center">No recent activity</p>
+            <p className="text-xs text-zinc-400 py-6 text-center font-mono leading-relaxed">
+              No recent activity
+              <span className="text-[11px] text-zinc-400/80 mt-1 block font-sans">
+                Connect MetaMask to paint live
+              </span>
+            </p>
           ) : (
             activities.slice(0, 8).map((act) => (
               <div
@@ -118,7 +123,7 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
                         {shortAddress(act.author, 3)}
                       </span>
                       {act.isVerified && (
-                        <span className="inline-flex items-center text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded">
+                        <span className="inline-flex items-center text-[9px] font-bold text-[#FF4D26] bg-orange-50 px-1 rounded">
                           Live ✓
                         </span>
                       )}
@@ -141,7 +146,7 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
         {/* Footer info */}
         <div className="pt-2 border-t border-zinc-100 flex items-center justify-between text-[10px] text-zinc-400 font-mono">
           <span>MagicBlock ER</span>
-          <span className="text-emerald-600 font-bold">Gas: $0.00</span>
+          <span className="text-[#FF4D26] font-bold">Gas: $0.00</span>
         </div>
       </div>
     </aside>

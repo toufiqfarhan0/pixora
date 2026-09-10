@@ -9,6 +9,7 @@ import {
   Maximize2,
   Download,
   Palette as PaletteIcon,
+  Search,
 } from 'lucide-react';
 import { ToolMode } from '../types/canvas';
 import { PALETTES } from '../lib/palette';
@@ -95,6 +96,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             title="Eyedropper Color Picker"
           >
             <Pipette className="h-4 w-4" />
+          </button>
+
+          <button
+            onClick={() => onSelectTool('inspect')}
+            className={`p-2 rounded-xl transition-all ${
+              toolMode === 'inspect'
+                ? 'bg-brand-600 text-white shadow-sm'
+                : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+            }`}
+            title="Pixel Inspector (Click pixel to inspect onchain provenance)"
+          >
+            <Search className="h-4 w-4" />
           </button>
 
           <button

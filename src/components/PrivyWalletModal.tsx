@@ -115,7 +115,7 @@ export const PrivyWalletModal: React.FC<PrivyWalletModalProps> = ({ isOpen, onCl
               <div className="relative flex items-center justify-center">
                 <MetaMaskIcon className="h-6 w-6" />
                 {isMetaMaskDetected && (
-                  <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+                  <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#FF4D26] ring-2 ring-white" />
                 )}
               </div>
               <span className="text-[15px] font-medium text-zinc-800">MetaMask</span>

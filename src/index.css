@@ -101,6 +101,19 @@ canvas.pixel-canvas {
   100% { transform: scale(1); opacity: 0; }
 }
 
+.pulse-indicator-brand {
+  position: relative;
+}
+.pulse-indicator-brand::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  background: #FF4D26;
+  animation: lightPulse 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Keep legacy mint for any stray references */
 .pulse-indicator-mint {
   position: relative;
 }
@@ -109,7 +122,7 @@ canvas.pixel-canvas {
   position: absolute;
   inset: -2px;
   border-radius: 9999px;
-  background: #10B981;
+  background: #FF4D26;
   animation: lightPulse 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 

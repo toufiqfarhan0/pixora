@@ -22,8 +22,8 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ telemetry, hoveredPi
               MagicBlock Ephemeral Rollup
             </span>
           </div>
-          <span className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-600 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 pulse-indicator-mint" />
+          <span className="flex items-center gap-1.5 text-[10px] font-mono text-[#FF4D26] font-semibold bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#FF4D26] pulse-indicator-brand" />
             10ms LIVE
           </span>
         </div>
@@ -44,10 +44,10 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ telemetry, hoveredPi
           {/* Gas Saved */}
           <div className="p-2.5 rounded-xl bg-zinc-50 border border-zinc-100 flex flex-col gap-0.5">
             <span className="text-[10px] text-zinc-500 flex items-center gap-1">
-              <Fuel className="h-3 w-3 text-emerald-600" /> Gas Fee
+              <Fuel className="h-3 w-3 text-[#FF4D26]" /> Gas Fee
             </span>
             <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-sm font-bold text-emerald-600">$0.00</span>
+              <span className="text-sm font-bold text-[#FF4D26]">$0.00</span>
               <span className="text-[10px] text-zinc-400">(${gasSavedUsd} saved)</span>
             </div>
           </div>
@@ -76,9 +76,9 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ telemetry, hoveredPi
         {/* Session Mode Status Bar */}
         <div className="mt-2.5 pt-2 border-t border-zinc-100 flex items-center justify-between text-[10px] font-mono">
           <span className="text-zinc-500">Auth:</span>
-          <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 pulse-indicator-mint" />
-            MetaMask Verified (Privy)
+          <span className="inline-flex items-center gap-1 font-semibold text-[#FF4D26] bg-orange-50 px-2 py-0.5 rounded-md border border-orange-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#FF4D26] pulse-indicator-brand" />
+            MetaMask Verified
           </span>
         </div>
 

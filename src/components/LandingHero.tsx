@@ -31,7 +31,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
     '7,7': '#FF4D26',
     '7,8': '#FF4D26',
     '8,7': '#FF4D26',
-    '8,8': '#10B981',
+    '8,8': '#FF4D26',
     '6,6': '#4F46E5',
     '9,9': '#4F46E5',
   });
@@ -91,10 +91,10 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
             <div className="bg-white p-3.5 rounded-xl border border-zinc-200/80 shadow-subtle text-left">
               <div className="flex items-center gap-1.5 text-zinc-400 text-xs mb-1">
-                <Fuel className="h-3.5 w-3.5 text-emerald-600" />
+                <Fuel className="h-3.5 w-3.5 text-[#FF4D26]" />
                 <span>Gas Per Stroke</span>
               </div>
-              <p className="text-xl font-bold text-emerald-600">0 SOL</p>
+              <p className="text-xl font-bold text-[#FF4D26]">0 SOL</p>
               <span className="text-[10px] text-zinc-400 font-sans">Gasless via ER</span>
             </div>
 
@@ -126,14 +126,14 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 <div className="flex gap-1.5">
                   <span className="h-3 w-3 rounded-full bg-red-400" />
                   <span className="h-3 w-3 rounded-full bg-amber-400" />
-                  <span className="h-3 w-3 rounded-full bg-emerald-400" />
+                  <span className="h-3 w-3 rounded-full bg-[#FF4D26]" />
                 </div>
                 <span className="text-xs font-mono text-zinc-400 ml-2">
                   Interactive Live Teaser · Try Painting Below!
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                {['#FF4D26', '#121316', '#4F46E5', '#10B981', '#F59E0B', '#EC4899'].map((c) => (
+                {['#FF4D26', '#121316', '#4F46E5', '#7C3AED', '#F59E0B', '#EC4899'].map((c) => (
                   <button
                     key={c}
                     onClick={() => setActiveTeaserColor(c)}
@@ -200,8 +200,8 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               <span className="px-2.5 py-1 rounded-md bg-brand-50 border border-brand-200 text-brand-700 font-mono text-[11px] font-bold uppercase tracking-wider">
                 MagicBlock Build Graveyard
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-mono text-[11px] font-semibold flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="px-2.5 py-0.5 rounded-full bg-orange-50 border border-orange-200 text-[#FF4D26] font-mono text-[11px] font-semibold flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#FF4D26] animate-pulse" />
                 Resurrected &amp; Built by Pixora
               </span>
             </div>
@@ -244,8 +244,8 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               </span>
             </div>
 
-            <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-100/90 flex flex-col gap-1.5 shadow-2xs">
-              <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold">
+            <div className="p-4 rounded-xl bg-orange-50/60 border border-orange-100/90 flex flex-col gap-1.5 shadow-2xs">
+              <div className="flex items-center gap-1.5 text-[#FF4D26] text-xs font-bold">
                 <span>▸</span>
                 <span>The ER Breakthrough</span>
               </div>
@@ -314,32 +314,32 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
           </div>
 
           {/* Pixora + MagicBlock Card */}
-          <div className="p-6 rounded-2xl bg-white border border-emerald-300 shadow-elevated flex flex-col gap-4 relative overflow-hidden">
+          <div className="p-6 rounded-2xl bg-white border border-orange-300 shadow-elevated flex flex-col gap-4 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-brand-50 rounded-full blur-2xl pointer-events-none" />
             <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
               <span className="text-xs font-mono font-bold uppercase tracking-wider text-brand-600">
                 Pixora on MagicBlock ER
               </span>
-              <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+              <span className="text-xs text-[#FF4D26] font-semibold flex items-center gap-1">
+                <CheckCircle2 className="h-3.5 w-3.5 text-[#FF4D26]" />
                 10ms Speed
               </span>
             </div>
             <ul className="space-y-3 text-xs sm:text-sm text-zinc-700">
               <li className="flex items-start gap-2.5">
-                <span className="text-emerald-500 font-bold mt-0.5">✓</span>
+                <span className="text-[#FF4D26] font-bold mt-0.5">✓</span>
                 <span><strong>10ms Block Time:</strong> Instant visual feedback for continuous, fluid brush strokes.</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-emerald-500 font-bold mt-0.5">✓</span>
+                <span className="text-[#FF4D26] font-bold mt-0.5">✓</span>
                 <span><strong>Zero Gas per Pixel:</strong> Paint thousands of pixels without spending a single lamport.</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-emerald-500 font-bold mt-0.5">✓</span>
-                <span><strong>Session Delegation:</strong> Connect once via Privy MetaMask; zero pop-ups during painting.</span>
+                <span className="text-[#FF4D26] font-bold mt-0.5">✓</span>
+                <span><strong>Session Delegation:</strong> Connect once via MetaMask; zero pop-ups during painting.</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-emerald-500 font-bold mt-0.5">✓</span>
+                <span className="text-[#FF4D26] font-bold mt-0.5">✓</span>
                 <span><strong>Solana L1 Settlement:</strong> 1-click atomic commit permanently seals canvas to Solana L1.</span>
               </li>
             </ul>
@@ -380,18 +380,18 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
           {/* Card 2 */}
           <div className="bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-subtle flex flex-col justify-between">
             <div>
-              <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+              <div className="h-10 w-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-4">
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <h3 className="font-bold text-base text-zinc-900 mb-2 font-[var(--font-display)]">
-                Privy & Session Keys
+                MetaMask &amp; Session Keys
               </h3>
               <p className="text-xs text-zinc-500 leading-relaxed">
-                Connect via email, Google, Twitter, or Solana wallet. A temporary session key authorizes gasless drawing without exposing private keys.
+                Connect via MetaMask. A temporary session key authorizes gasless drawing without exposing private keys.
               </p>
             </div>
-            <span className="text-[11px] font-mono text-emerald-600 font-bold mt-4 block">
-              Privy Embedded Auth →
+            <span className="text-[11px] font-mono text-brand-600 font-bold mt-4 block">
+              MetaMask Auth →
             </span>
           </div>
 

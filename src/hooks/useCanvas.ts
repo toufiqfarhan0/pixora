@@ -7,7 +7,9 @@ interface UseCanvasProps {
   selectedColor: string;
   toolMode: ToolMode;
   onPixelPlaced: (x: number, y: number, color: string) => void;
+  onInspectPixel?: (x: number, y: number, pixel: Pixel | null) => void;
   initialPixels?: Pixel[];
+  onCursorMove?: (x: number, y: number, isDrawing: boolean) => void;
 }
 
 export function useCanvas({
@@ -16,7 +18,9 @@ export function useCanvas({
   selectedColor,
   toolMode,
   onPixelPlaced,
+  onInspectPixel,
   initialPixels = [],
+  onCursorMove,
 }: UseCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -235,6 +239,14 @@ export function useCanvas({
       if (e.button === 0) {
         const grid = screenToGrid(e.clientX, e.clientY);
         if (grid) {
+          if (toolMode === 'inspect') {
+            const existing = pixelsRef.current.get(`${grid.x},${grid.y}`) || null;
+            if (onInspectPixel) {
+              onInspectPixel(grid.x, grid.y, existing);
+            }
+            return;
+          }
+
           if (toolMode === 'picker') {
             const existing = pixelsRef.current.get(`${grid.x},${grid.y}`);
             if (existing) {
@@ -270,6 +282,10 @@ export function useCanvas({
         const existing = pixelsRef.current.get(`${grid.x},${grid.y}`);
         setHoveredPixel({ x: grid.x, y: grid.y, pixel: existing });
 
+        if (onCursorMove) {
+          onCursorMove(grid.x, grid.y, isDrawingRef.current);
+        }
+
         if (isDrawingRef.current) {
           applyPixelAction(grid.x, grid.y);
         }
@@ -277,7 +293,7 @@ export function useCanvas({
         setHoveredPixel(null);
       }
     },
-    [screenToGrid, applyPixelAction]
+    [screenToGrid, applyPixelAction, onCursorMove]
   );
 
   // Pointer Up / Leave

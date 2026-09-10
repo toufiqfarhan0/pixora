@@ -94,8 +94,8 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-100/90 flex flex-col gap-1.5 shadow-2xs">
-            <span className="text-xs text-emerald-600 font-bold">▸ 02. The Engine</span>
+          <div className="p-4 rounded-xl bg-orange-50/60 border border-orange-100/90 flex flex-col gap-1.5 shadow-2xs">
+            <span className="text-xs text-[#FF4D26] font-bold">▸ 02. The Engine</span>
             <p className="text-xs sm:text-sm font-bold text-zinc-900 font-[var(--font-display)]">
               ER lands a million placements in 10ms
             </p>
@@ -150,16 +150,16 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({
           {/* Arrow */}
           <div className="flex flex-col items-center text-zinc-300 font-mono text-[10px]">
             <span>10ms sync</span>
-            <span className="text-emerald-500 font-bold">➔</span>
+            <span className="text-[#FF4D26] font-bold">➔</span>
           </div>
 
           {/* Node 3: Ephemeral Rollup */}
-          <div className="flex-1 bg-emerald-50/50 p-4 rounded-xl border border-emerald-200 flex flex-col items-center text-center ring-1 ring-emerald-300/60">
-            <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2 shadow-sm">
+          <div className="flex-1 bg-orange-50/50 p-4 rounded-xl border border-orange-200 flex flex-col items-center text-center ring-1 ring-orange-300/60">
+            <div className="h-10 w-10 rounded-xl bg-orange-100 text-[#FF4D26] flex items-center justify-center mb-2 shadow-sm">
               <Zap className="h-5 w-5" />
             </div>
-            <span className="font-bold text-xs text-emerald-900">3. Ephemeral Rollup</span>
-            <span className="text-[10px] text-emerald-700 font-mono mt-0.5">10ms · Gasless</span>
+            <span className="font-bold text-xs text-orange-900">3. Ephemeral Rollup</span>
+            <span className="text-[10px] text-[#FF4D26] font-mono mt-0.5">10ms · Gasless</span>
           </div>
 
           {/* Arrow */}
@@ -198,7 +198,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({
 
         {/* Step 2 */}
         <div className="flex items-start gap-5">
-          <div className="h-10 w-10 rounded-2xl bg-emerald-600 text-white font-bold font-mono text-sm flex items-center justify-center shrink-0 shadow-md">
+          <div className="h-10 w-10 rounded-2xl bg-[#FF4D26] text-white font-bold font-mono text-sm flex items-center justify-center shrink-0 shadow-md">
             02
           </div>
           <div>

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useMemo, useCallback } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { Navbar } from './components/Navbar';
@@ -6,66 +8,23 @@ import { Toolbar } from './components/Toolbar';
 import { TelemetryHUD } from './components/TelemetryHUD';
 import { ActivitySidebar } from './components/ActivitySidebar';
 import { CommitModal } from './components/CommitModal';
+import { PixelInspectorModal } from './components/PixelInspectorModal';
 import { LandingHero } from './components/LandingHero';
 import { HowItWorksPage } from './components/HowItWorksPage';
 import { useCanvas } from './hooks/useCanvas';
 import { useMagicBlockER } from './hooks/useMagicBlockER';
+import { useRealtimeMultiplayer } from './hooks/useRealtimeMultiplayer';
 import { ToolMode, Pixel, AuthMode } from './types/canvas';
 import { DEFAULT_COLOR } from './lib/palette';
 
 const CANVAS_WIDTH = 128;
 const CANVAS_HEIGHT = 128;
 
-// Create starter pixel art (MagicBlock "M" + Solana gradient emblem in center)
-function createInitialArt(): Pixel[] {
-  const pixels: Pixel[] = [];
-  const cx = 64;
-  const cy = 64;
-
-  // Simple emblem pattern around center
-  const pattern = [
-    // Top bar
-    { x: -8, y: -8, c: '#FF4D26' }, { x: -7, y: -8, c: '#FF4D26' }, { x: -6, y: -8, c: '#FF4D26' },
-    { x: 6, y: -8, c: '#4F46E5' }, { x: 7, y: -8, c: '#4F46E5' }, { x: 8, y: -8, c: '#4F46E5' },
-    // Solana slant 1
-    { x: -5, y: -4, c: '#14F195' }, { x: -4, y: -4, c: '#14F195' }, { x: -3, y: -4, c: '#14F195' },
-    { x: -2, y: -4, c: '#00FF94' }, { x: -1, y: -4, c: '#00FF94' }, { x: 0, y: -4, c: '#00FF94' },
-    { x: 1, y: -4, c: '#00FF94' }, { x: 2, y: -4, c: '#00FF94' }, { x: 3, y: -4, c: '#14F195' },
-    { x: 4, y: -4, c: '#14F195' }, { x: 5, y: -4, c: '#14F195' },
-    // Solana slant 2
-    { x: -4, y: 0, c: '#4F46E5' }, { x: -3, y: 0, c: '#4F46E5' }, { x: -2, y: 0, c: '#4F46E5' },
-    { x: -1, y: 0, c: '#FF4D26' }, { x: 0, y: 0, c: '#FF4D26' }, { x: 1, y: 0, c: '#FF4D26' },
-    { x: 2, y: 0, c: '#FF4D26' }, { x: 3, y: 0, c: '#4F46E5' }, { x: 4, y: 0, c: '#4F46E5' },
-    // Solana slant 3
-    { x: -5, y: 4, c: '#14F195' }, { x: -4, y: 4, c: '#14F195' }, { x: -3, y: 4, c: '#14F195' },
-    { x: -2, y: 4, c: '#00FF94' }, { x: -1, y: 4, c: '#00FF94' }, { x: 0, y: 4, c: '#00FF94' },
-    { x: 1, y: 4, c: '#00FF94' }, { x: 2, y: 4, c: '#00FF94' }, { x: 3, y: 4, c: '#14F195' },
-    { x: 4, y: 4, c: '#14F195' }, { x: 5, y: 4, c: '#14F195' },
-    // Bottom bar
-    { x: -8, y: 8, c: '#FF4D26' }, { x: -7, y: 8, c: '#FF4D26' }, { x: -6, y: 8, c: '#FF4D26' },
-    { x: 6, y: 8, c: '#4F46E5' }, { x: 7, y: 8, c: '#4F46E5' }, { x: 8, y: 8, c: '#4F46E5' },
-  ];
-
-  pattern.forEach(({ x, y, c }) => {
-    pixels.push({
-      x: cx + x,
-      y: cy + y,
-      color: c,
-      author: 'Solana Genesis',
-      timestamp: Date.now(),
-      isERConfirmed: true,
-      isVerified: true,
-    });
-  });
-
-  return pixels;
-}
-
 export const App: React.FC = () => {
   // Navigation View: 'landing' | 'canvas' | 'how-it-works'
   const [currentView, setCurrentView] = useState<'landing' | 'canvas' | 'how-it-works'>('landing');
 
-  // Privy Web3 Authentication (Exact BlitzMine reference - zero hardcoding)
+  // Privy Web3 Authentication (MetaMask verified)
   const { ready, authenticated, user, login, logout } = usePrivy();
 
   const solanaWallet = user?.linkedAccounts?.find(
@@ -84,7 +43,7 @@ export const App: React.FC = () => {
         ? 'Phantom'
         : solanaWallet
         ? 'Solana Wallet'
-        : 'Privy Verified')
+        : 'MetaMask Verified')
     : null;
 
   const authMode: AuthMode = 'live';
@@ -94,45 +53,65 @@ export const App: React.FC = () => {
   const [toolMode, setToolMode] = useState<ToolMode>('pen');
   const [isCommitModalOpen, setIsCommitModalOpen] = useState(false);
 
-  // Initial starter art
-  const initialPixels = useMemo(() => createInitialArt(), []);
+  // Clean empty starter canvas ready for real painters
+  const initialPixels = useMemo<Pixel[]>(() => [], []);
 
   // MagicBlock Ephemeral Rollup hook
   const {
     telemetry,
     activities,
     streamPixel,
+    recordRemotePixel,
     commitToSolanaL1,
     isCommitting,
     lastCommitResult,
   } = useMagicBlockER({
     userAddress,
     authMode,
-    onRemotePixel: (p) => {
-      setRemotePixel(p);
-    },
   });
 
   const [welcomeToast, setWelcomeToast] = useState<string | null>(null);
+
+  // Real-time peer cursors & multiplayer sync across tabs and windows
+  const { remotePeers, broadcastCursor, broadcastPixel, peerCount } = useRealtimeMultiplayer({
+    userAddress,
+    selectedColor,
+    onRemotePaint: (pixel) => {
+      setRemotePixel(pixel);
+      recordRemotePixel(pixel);
+    },
+  });
 
   // Local placement callback
   const handlePixelPlaced = useCallback(
     (x: number, y: number, color: string) => {
       if (!authenticated) {
-        setWelcomeToast('🔒 Please connect your wallet via Privy to place pixels on Solana ER!');
+        setWelcomeToast('🔒 Connect your MetaMask wallet via Privy to place pixels on Solana ER!');
         setTimeout(() => setWelcomeToast(null), 4000);
         if (ready) login();
         return;
       }
-      streamPixel(x, y, color);
+      const newPixel = streamPixel(x, y, color);
+      broadcastPixel(newPixel);
     },
-    [authenticated, ready, login, streamPixel]
+    [authenticated, ready, login, streamPixel, broadcastPixel]
   );
+
+  const [inspectedPixel, setInspectedPixel] = useState<{
+    x: number;
+    y: number;
+    pixel: Pixel | null;
+  } | null>(null);
+
+  const handleInspectPixel = useCallback((x: number, y: number, pixel: Pixel | null) => {
+    setInspectedPixel({ x, y, pixel });
+  }, []);
 
   // Canvas engine hook
   const {
     canvasRef,
     scale,
+    offset,
     hoveredPixel,
     pixelsMap,
     handlePointerDown,
@@ -147,7 +126,9 @@ export const App: React.FC = () => {
     selectedColor,
     toolMode,
     onPixelPlaced: handlePixelPlaced,
+    onInspectPixel: handleInspectPixel,
     initialPixels,
+    onCursorMove: broadcastCursor,
   });
 
   const handleZoomIn = () => setScale((s) => Math.min(s * 1.3, 48));
@@ -195,7 +176,15 @@ export const App: React.FC = () => {
       <Navbar
         currentView={currentView}
         onNavigate={setCurrentView}
-        onOpenCommit={() => setIsCommitModalOpen(true)}
+        onOpenCommit={() => {
+          if (!authenticated) {
+            setWelcomeToast('🔒 Connect your MetaMask wallet to commit to Solana L1!');
+            setTimeout(() => setWelcomeToast(null), 4000);
+            if (ready) login();
+            return;
+          }
+          setIsCommitModalOpen(true);
+        }}
         onOpenWalletModal={handleOpenPrivyModal}
         onDisconnect={handleDisconnect}
         userAddress={userAddress}
@@ -236,9 +225,13 @@ export const App: React.FC = () => {
                 canvasRef={canvasRef}
                 toolMode={toolMode}
                 scale={scale}
+                offset={offset}
+                width={CANVAS_WIDTH}
+                height={CANVAS_HEIGHT}
                 handlePointerDown={handlePointerDown}
                 handlePointerMove={handlePointerMove}
                 handlePointerUp={handlePointerUp}
+                remoteCursors={remotePeers}
               />
             </main>
 
@@ -254,7 +247,7 @@ export const App: React.FC = () => {
               onExportPNG={handleExportPNG}
             />
 
-            {/* Bottom-left Telemetry HUD (Judge Highlight!) */}
+            {/* Bottom-left Telemetry HUD */}
             <TelemetryHUD telemetry={telemetry} hoveredPixel={hoveredPixel} />
 
             {/* Top-right Activity Stream Sidebar */}
@@ -269,14 +262,13 @@ export const App: React.FC = () => {
         )}
       </div>
 
-      {/* Welcome Notification Toast */}
+      {/* Notification Toast */}
       {welcomeToast && (
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 py-2 px-4 rounded-xl bg-zinc-900 text-white text-xs font-semibold shadow-popover flex items-center gap-2 border border-zinc-700/80 animate-fade-in font-[var(--font-body)]">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          <span className="w-2 h-2 rounded-full bg-[#FF4D26] animate-pulse shrink-0" />
           <span>{welcomeToast}</span>
         </div>
       )}
-
 
       {/* Commit to L1 Modal */}
       <CommitModal
@@ -289,6 +281,18 @@ export const App: React.FC = () => {
         authMode={authMode}
         onOpenPrivyModal={handleOpenPrivyModal}
       />
+
+      {/* Pixel Provenance Inspector Modal */}
+      {inspectedPixel && (
+        <PixelInspectorModal
+          isOpen={true}
+          onClose={() => setInspectedPixel(null)}
+          pixel={inspectedPixel.pixel}
+          x={inspectedPixel.x}
+          y={inspectedPixel.y}
+          onSelectColor={setSelectedColor}
+        />
+      )}
     </div>
   );
 };

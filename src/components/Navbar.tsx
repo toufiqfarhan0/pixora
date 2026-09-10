@@ -117,11 +117,11 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Mode Status Pill */}
         {authMode === 'live' && (
-          <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 font-[var(--font-mono)] text-[11px]">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 pulse-indicator-mint" />
-            <span className="text-emerald-700 font-semibold">MetaMask</span>
+          <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200 font-[var(--font-mono)] text-[11px]">
+            <span className="h-2 w-2 rounded-full bg-brand pulse-indicator-brand" />
+            <span className="text-brand-700 font-semibold">MetaMask</span>
             <span className="text-zinc-300">·</span>
-            <span className="text-emerald-600 font-bold">Privy Verified</span>
+            <span className="text-brand-600 font-bold">Verified</span>
           </div>
         )}
 
@@ -152,10 +152,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen((prev) => !prev)}
-              className="group flex h-9 min-w-[128px] items-center gap-2 rounded-full border border-zinc-300 bg-white px-3.5 font-mono text-xs font-semibold leading-none text-zinc-800 transition-colors hover:border-zinc-400 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 shadow-2xs"
+              className="group flex h-9 min-w-[128px] items-center gap-2 rounded-full border border-zinc-300 bg-white px-3.5 font-mono text-xs font-semibold leading-none text-zinc-800 transition-colors hover:border-orange-400 hover:bg-orange-50/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70 shadow-2xs"
               title="Click to manage connected wallet"
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-[#FF4D26] animate-pulse shrink-0" />
               <span className="flex-1 text-left">
                 {userAddress.length > 10
                   ? `${userAddress.slice(0, 4)}...${userAddress.slice(-4)}`
@@ -187,7 +187,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-mono text-xs text-zinc-700 hover:bg-zinc-100/70 transition-colors text-left"
                 >
                   {copied ? (
-                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    <Check className="h-3.5 w-3.5 text-[#FF4D26]" />
                   ) : (
                     <Copy className="h-3.5 w-3.5 text-zinc-400" />
                   )}
@@ -210,10 +210,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         ) : (
           <button
             onClick={onOpenWalletModal}
-            className="flex h-9 items-center gap-2 rounded-full border border-emerald-500 bg-emerald-600 px-4 font-mono text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition-all active:scale-[0.98]"
+            className="flex h-9 items-center gap-2 rounded-full border border-[#FF4D26] bg-[#FF4D26] px-4 font-mono text-xs font-bold text-white shadow-sm hover:bg-[#E83E16] transition-all active:scale-[0.98]"
           >
             <Wallet className="h-3.5 w-3.5 text-white/90" />
-            <span>Connect Wallet</span>
+            <span>Connect MetaMask</span>
           </button>
         )}
       </div>
