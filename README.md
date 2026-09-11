@@ -17,7 +17,7 @@ Built for Solana Blitz v8, which is themed around collaborative games and requir
 | **L1 Settlement Tx** | [`2wccdWJj...ut5RdH78`](https://explorer.solana.com/tx/2wccdWJjvWuawQ8smHhtjoTMw6KdZ4RwyUwWHGn8T5FHNpGk4cJ3wFR6p537Uw6NXp67xMsEFdJR5RFrut5RdH78?cluster=devnet) |
 | **Network** | Solana Devnet |
 | **Rollup Layer** | MagicBlock Ephemeral Rollup (`https://devnet.magicblock.app`) |
-| **Authentication** | Privy Web3 Auth (MetaMask & Socials) |
+| **Authentication** | Privy Web3 Auth (MetaMask, Email & Google on Solana) |
 
 ---
 
@@ -25,7 +25,7 @@ Built for Solana Blitz v8, which is themed around collaborative games and requir
 
 1. **The Board**: The canvas is a 128×128 grid (16,384 discrete onchain pixel cells).
 2. **Spectating**: Anyone can open the canvas and watch strokes land live in real-time with zero login required.
-3. **Painting**: Connect your wallet via Privy (MetaMask, Phantom, Solflare, or Google/Twitter social login) to place pixels.
+3. **Painting**: Connect your wallet via Privy (MetaMask, Email, or Google login with automatic Solana embedded wallets) to place pixels. Purely Solana with zero Ethereum.
 4. **Instant 10ms Confirmations**: Drag-to-paint uses Bresenham's line algorithm to render smooth continuous strokes. Strokes confirm in 10ms on the Ephemeral Rollup with $0.00 gas fees.
 5. **Multiplayer Live Cursors**: Connected painters see each other's live cursors and strokes across browsers and devices.
 6. **Provenance & Inspection**: Click any pixel in *Inspect* mode to view the author's Solana wallet address, timestamp, and onchain transaction link.

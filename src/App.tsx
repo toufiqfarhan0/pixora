@@ -63,6 +63,14 @@ export const App: React.FC<AppProps> = ({ initialView = 'landing' }) => {
   // Dynamic user address from connected or embedded wallet (strictly real, never hardcoded)
   const userAddress = useMemo(() => {
     if (!authenticated || !user) return null;
+    // Prefer Solana wallet if linked (e.g. embedded wallet or connected Solana account)
+    const solanaAccount = user.linkedAccounts?.find(
+      (acc): acc is any =>
+        acc.type === 'wallet' &&
+        acc.chainType === 'solana' &&
+        Boolean((acc as any).address)
+    );
+    if (solanaAccount) return (solanaAccount as any).address;
     if (user.wallet?.address) return user.wallet.address;
     const walletAccount = user.linkedAccounts?.find(
       (acc): acc is any => acc.type === 'wallet' && Boolean((acc as any).address)
@@ -72,15 +80,10 @@ export const App: React.FC<AppProps> = ({ initialView = 'landing' }) => {
 
   const loginMethod = useMemo(() => {
     if (!authenticated || !user) return null;
-    if (user.wallet?.walletClientType === 'phantom') return 'Phantom';
-    if (user.wallet?.walletClientType === 'solflare') return 'Solflare';
-    if (user.wallet?.walletClientType === 'backpack') return 'Backpack';
-    if (user.wallet?.walletClientType === 'metamask') return 'MetaMask';
-    if (user.wallet?.chainType === 'solana') return 'Solana';
-    if (user.email?.address) return 'Email';
     if (user.google?.email) return 'Google';
-    if (user.twitter?.username) return 'Twitter';
-    return 'Wallet Verified';
+    if (user.email?.address) return 'Email';
+    if (user.wallet?.walletClientType === 'metamask') return 'MetaMask';
+    return 'Solana';
   }, [authenticated, user]);
 
   const authMode: AuthMode = 'live';

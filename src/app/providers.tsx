@@ -16,7 +16,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         appearance: {
           theme: 'light',
           accentColor: '#FF4D26',
-          showWalletLoginFirst: true,
+          showWalletLoginFirst: false,
           walletChainType: 'solana-only',
           walletList: ['metamask'],
         },
@@ -26,9 +26,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
           },
         },
         embeddedWallets: {
-          solana: { createOnLogin: 'off' },
+          solana: { createOnLogin: 'users-without-wallets' },
         },
-        loginMethods: ['wallet'],
+        loginMethods: ['email', 'google', 'wallet'],
       }}
     >
       {children}
