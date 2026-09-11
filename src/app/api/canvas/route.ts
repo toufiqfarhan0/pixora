@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getServerState } from '@/lib/serverCanvasState';
+import { getServerState, trySaveToDisk } from '@/lib/serverCanvasState';
+import { Pixel } from '@/types/canvas';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +20,7 @@ export async function GET() {
       totalCells: 16384,
     },
     pixels: validPixels,
-    txCount: validPixels.length,
+    txCount: Math.max(state.globalTxCount, validPixels.length),
     rollup: {
       layer: 'MagicBlock Ephemeral Rollup',
       router: 'https://devnet.magicblock.app',
@@ -35,3 +36,40 @@ export async function GET() {
     timestamp: Date.now(),
   });
 }
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { pixels, txCount } = body as { pixels?: Pixel[]; txCount?: number };
+    const state = getServerState();
+    let changed = false;
+
+    if (Array.isArray(pixels)) {
+      pixels.forEach((p) => {
+        if (p && p.x >= 0 && p.x < 128 && p.y >= 0 && p.y < 128) {
+          state.pixels.set(`${p.x},${p.y}`, { ...p, timestamp: p.timestamp || Date.now() });
+        }
+      });
+      changed = true;
+    }
+
+    if (typeof txCount === 'number' && txCount > state.globalTxCount) {
+      state.globalTxCount = txCount;
+      changed = true;
+    }
+
+    if (changed) {
+      state.lastUpdated = Date.now();
+      trySaveToDisk(state);
+    }
+
+    return NextResponse.json({
+      status: 'ok',
+      totalPixels: state.pixels.size,
+      txCount: state.globalTxCount,
+    });
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || 'Server error' }, { status: 500 });
+  }
+}
+

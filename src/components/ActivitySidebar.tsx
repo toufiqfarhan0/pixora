@@ -41,8 +41,9 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState<'stream' | 'leaderboard'>('stream');
 
-  // Compute live session leaderboard from current onchain canvas state
+  // Compute live session leaderboard from current onchain canvas state (only when leaderboard tab is active)
   const leaderboard = useMemo<LeaderboardEntry[]>(() => {
+    if (activeTab !== 'leaderboard') return [];
     const counts = new Map<string, { count: number; color: string }>();
 
     // Aggregate from full pixel state if available, else from activities
@@ -71,7 +72,7 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 15);
-  }, [pixels, activities, userAddress]);
+  }, [activeTab, pixels, activities, userAddress]);
 
   // Merge live stream activities with canvas pixels so past strokes (e.g. black, orange, cyan)
   // remain preserved and visible in the 10MS ER ENGINE feed
@@ -79,9 +80,10 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
     const list: ActivityItem[] = [...activities];
     const seen = new Set(activities.map((a) => `${a.x},${a.y}`));
 
-    // Backfill from placed canvas pixels if activities has room (newest first)
+    // Backfill from placed canvas pixels if activities has room (newest first, bound to recent 120)
     if (pixels && pixels.length > 0) {
-      for (let i = pixels.length - 1; i >= 0 && list.length < 150; i--) {
+      const sliceStart = Math.max(0, pixels.length - 120);
+      for (let i = pixels.length - 1; i >= sliceStart && list.length < 80; i--) {
         const p = pixels[i];
         const key = `${p.x},${p.y}`;
         if (!seen.has(key)) {

@@ -78,10 +78,16 @@ export function useCanvas({
   const lastPlacedRef = useRef<{ x: number; y: number } | null>(null);
 
   const LOCAL_STORAGE_KEY = 'pixora_canvas_snapshot_v2';
+  const storageTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const versionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Save in-memory pixels snapshot to LocalStorage
+  // Save in-memory pixels snapshot to LocalStorage (asynchronous / non-blocking)
   const saveToStorage = useCallback(() => {
     if (typeof window === 'undefined') return;
+    if (storageTimerRef.current) {
+      clearTimeout(storageTimerRef.current);
+      storageTimerRef.current = null;
+    }
     try {
       const arr = Array.from(pixelsRef.current.values());
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(arr));
@@ -89,6 +95,25 @@ export function useCanvas({
       // Ignore quota exceeded in incognito
     }
   }, []);
+
+  // Debounced save for continuous painting (runs only when user pauses or after delay)
+  const saveToStorageDebounced = useCallback(() => {
+    if (storageTimerRef.current) return;
+    storageTimerRef.current = setTimeout(() => {
+      storageTimerRef.current = null;
+      saveToStorage();
+    }, 1500);
+  }, [saveToStorage]);
+
+  // Debounced React state update so rapid pixel placements don't trigger 60 React DOM re-renders per second
+  const scheduleVersionUpdate = useCallback(() => {
+    if (versionTimerRef.current) return;
+    versionTimerRef.current = setTimeout(() => {
+      versionTimerRef.current = null;
+      setPixelsVersion((v) => v + 1);
+    }, 200);
+  }, []);
+
 
   // Initialize pixels from initialPixels or LocalStorage on mount
   useEffect(() => {
@@ -281,9 +306,10 @@ export function useCanvas({
         pixelsRef.current.set(`${gridX},${gridY}`, p);
         onPixelPlaced(gridX, gridY, selectedColor);
       }
-      saveToStorage();
+      saveToStorageDebounced();
+      scheduleVersionUpdate();
     },
-    [toolMode, selectedColor, userAddress, onPixelPlaced, saveToStorage]
+    [toolMode, selectedColor, userAddress, onPixelPlaced, saveToStorageDebounced, scheduleVersionUpdate]
   );
 
   // Smooth continuous line drawing using Bresenham algorithm
@@ -493,9 +519,10 @@ export function useCanvas({
       isDrawingRef.current = false;
       lastPlacedRef.current = null;
       setPixelsVersion((v) => v + 1);
+      saveToStorage();
       onStrokeEnd?.();
     }
-  }, [onStrokeEnd]);
+  }, [onStrokeEnd, saveToStorage]);
 
   // External update (from peer or ER sync)
   const setRemotePixel = useCallback(
@@ -507,14 +534,14 @@ export function useCanvas({
         heat: (existing?.heat || 0) + 1,
       };
       pixelsRef.current.set(`${pixel.x},${pixel.y}`, updatedPixel);
-      setPixelsVersion((v) => v + 1);
       requestRender();
-      saveToStorage();
+      scheduleVersionUpdate();
+      saveToStorageDebounced();
     },
-    [width, height, requestRender, saveToStorage]
+    [width, height, requestRender, scheduleVersionUpdate, saveToStorageDebounced]
   );
 
-  // External batch update (from server initial state)
+  // External batch update (from server initial state or peer sync)
   const setMultipleRemotePixels = useCallback(
     (pixels: Pixel[]) => {
       if (!pixels || pixels.length === 0) return;
@@ -526,11 +553,11 @@ export function useCanvas({
           heat: (existing?.heat || 0) + 1,
         });
       });
-      setPixelsVersion((v) => v + 1);
       requestRender();
-      saveToStorage();
+      scheduleVersionUpdate();
+      saveToStorageDebounced();
     },
-    [width, height, requestRender, saveToStorage]
+    [width, height, requestRender, scheduleVersionUpdate, saveToStorageDebounced]
   );
 
   // Attach wheel listener

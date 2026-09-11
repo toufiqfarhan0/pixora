@@ -105,6 +105,7 @@ export const App: React.FC<AppProps> = ({ initialView = 'landing' }) => {
     recordRemotePixel,
     recordRemoteBatch,
     initRemotePixels,
+    syncTxCount,
     commitToSolanaL1,
     isCommitting,
     lastCommitResult,
@@ -148,6 +149,8 @@ export const App: React.FC<AppProps> = ({ initialView = 'landing' }) => {
       setMultipleRemotePixelsRef.current?.(pixels);
       initRemotePixels(pixels);
     },
+    onSyncTxCount: syncTxCount,
+    currentTxCount: telemetry.txCount,
   });
 
   const setRemotePixelRef = useRef<((pixel: Pixel) => void) | null>(null);
@@ -241,9 +244,12 @@ export const App: React.FC<AppProps> = ({ initialView = 'landing' }) => {
           setMultipleRemotePixelsRef.current?.(data.pixels);
           initRemotePixels(data.pixels);
         }
+        if (data && typeof data.txCount === 'number') {
+          syncTxCount(data.txCount);
+        }
       })
       .catch(() => {});
-  }, [initRemotePixels]);
+  }, [initRemotePixels, syncTxCount]);
 
   // Sync initial batch to server once if this browser already had artwork loaded
   const hasSyncedInitialBatchRef = useRef(false);

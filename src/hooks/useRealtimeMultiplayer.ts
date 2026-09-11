@@ -45,6 +45,8 @@ interface UseRealtimeMultiplayerProps {
   onRemotePaint?: (pixel: Pixel) => void;
   onRemoteBatch?: (pixels: Pixel[]) => void;
   onInitCanvas?: (pixels: Pixel[]) => void;
+  onSyncTxCount?: (count: number) => void;
+  currentTxCount?: number;
 }
 
 export function useRealtimeMultiplayer({
@@ -53,6 +55,8 @@ export function useRealtimeMultiplayer({
   onRemotePaint,
   onRemoteBatch,
   onInitCanvas,
+  onSyncTxCount,
+  currentTxCount = 0,
 }: UseRealtimeMultiplayerProps) {
   // Real active remote peers map: peerId -> RemoteCursor
   const [remotePeers, setRemotePeers] = useState<RemoteCursor[]>([]);
@@ -72,6 +76,12 @@ export function useRealtimeMultiplayer({
   const onInitCanvasRef = useRef(onInitCanvas);
   onInitCanvasRef.current = onInitCanvas;
 
+  const onSyncTxCountRef = useRef(onSyncTxCount);
+  onSyncTxCountRef.current = onSyncTxCount;
+
+  const currentTxCountRef = useRef(currentTxCount);
+  currentTxCountRef.current = currentTxCount;
+
   const userAddressRef = useRef(userAddress);
   userAddressRef.current = userAddress;
 
@@ -89,6 +99,8 @@ export function useRealtimeMultiplayer({
 
   const pendingBatchRef = useRef<Pixel[]>([]);
   const flushTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isPostingRef = useRef(false);
+  const lastSyncTimeRef = useRef(Date.now());
 
   const getDisplayName = useCallback(() => {
     if (userAddressRef.current) {
@@ -104,8 +116,15 @@ export function useRealtimeMultiplayer({
     }
     if (pendingBatchRef.current.length === 0) return;
 
-    const batch = [...pendingBatchRef.current];
-    pendingBatchRef.current = [];
+    if (isPostingRef.current) {
+      flushTimerRef.current = setTimeout(() => {
+        flushPendingBatch();
+      }, 50);
+      return;
+    }
+
+    const batch = pendingBatchRef.current.splice(0, pendingBatchRef.current.length);
+    if (batch.length === 0) return;
 
     // Local BroadcastChannel for instant batch delivery across tabs
     if (channelRef.current && batch.length > 1) {
@@ -117,18 +136,33 @@ export function useRealtimeMultiplayer({
       } catch {}
     }
 
-    // Cross-browser / server relay
+    // Cross-browser / server relay with strict single-concurrency guard
+    isPostingRef.current = true;
     fetch('/api/realtime', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sessionId,
+        txCount: currentTxCountRef.current,
         event:
           batch.length === 1
             ? { type: 'PIXEL_PAINT', pixel: batch[0] }
             : { type: 'BATCH_PIXELS', pixels: batch },
       }),
-    }).catch(() => {});
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && typeof data.globalTxCount === 'number') {
+          onSyncTxCountRef.current?.(data.globalTxCount);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        isPostingRef.current = false;
+        if (pendingBatchRef.current.length > 0) {
+          flushPendingBatch();
+        }
+      });
   }, [sessionId]);
 
   // Stable single connection setup: runs ONCE on mount
@@ -189,7 +223,32 @@ export function useRealtimeMultiplayer({
       });
     }
 
-    // 2. Server-Sent Events (SSE) for cross-browser sync (Firefox <-> Comet <-> Chrome)
+    // 2. Reliable Fallback Delta Sync (reconciles any missing pixels across separate browser engines)
+    const performDeltaSync = async () => {
+      try {
+        const since = lastSyncTimeRef.current;
+        const res = await fetch(`/api/realtime?sync=1&since=${since}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.ok) {
+          if (Array.isArray(data.pixels) && data.pixels.length > 0) {
+            onRemoteBatchRef.current
+              ? onRemoteBatchRef.current(data.pixels)
+              : onInitCanvasRef.current?.(data.pixels);
+          }
+          if (typeof data.timestamp === 'number') {
+            lastSyncTimeRef.current = data.timestamp;
+          }
+          if (typeof data.globalTxCount === 'number') {
+            onSyncTxCountRef.current?.(data.globalTxCount);
+          }
+        }
+      } catch {
+        // Ignore network blips
+      }
+    };
+
+    // 3. Server-Sent Events (SSE) for cross-browser sync (Firefox <-> Comet <-> Chrome)
     const es = new EventSource(`/api/realtime?sessionId=${sessionId}`);
     eventSourceRef.current = es;
 
@@ -202,19 +261,36 @@ export function useRealtimeMultiplayer({
           if (data.pixels && data.pixels.length > 0) {
             onInitCanvasRef.current?.(data.pixels);
           }
+          if (typeof data.globalTxCount === 'number') {
+            onSyncTxCountRef.current?.(data.globalTxCount);
+          }
         } else if (data.type === 'PIXEL_PAINT') {
           onRemotePaintRef.current?.(data.pixel);
+          if (typeof data.globalTxCount === 'number') {
+            onSyncTxCountRef.current?.(data.globalTxCount);
+          }
         } else if (data.type === 'BATCH_PIXELS') {
           if (data.pixels && data.pixels.length > 0) {
             onRemoteBatchRef.current
               ? onRemoteBatchRef.current(data.pixels)
               : onInitCanvasRef.current?.(data.pixels);
           }
+          if (typeof data.globalTxCount === 'number') {
+            onSyncTxCountRef.current?.(data.globalTxCount);
+          }
         }
       } catch {
         // Ignore ping comments
       }
     };
+
+    es.onerror = () => {
+      // Re-sync missing pixels immediately if connection drops or reconnects
+      performDeltaSync();
+    };
+
+    // Periodic delta sync interval (every 1.8 seconds)
+    const deltaSyncInterval = setInterval(performDeltaSync, 1800);
 
     // Periodic cleanup of stale local cursors
     const interval = setInterval(() => {
@@ -233,6 +309,7 @@ export function useRealtimeMultiplayer({
 
     return () => {
       flushPendingBatch();
+      clearInterval(deltaSyncInterval);
       clearInterval(interval);
       if (channel) {
         channel.postMessage({ type: 'PEER_LEAVE', id: sessionId });

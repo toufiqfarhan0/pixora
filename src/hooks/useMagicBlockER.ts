@@ -246,6 +246,23 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     setActivities(newActivities);
   }, []);
 
+  // Dynamically synchronize transaction count from server/peers
+  const syncTxCount = useCallback(
+    (count: number) => {
+      if (typeof count !== 'number' || isNaN(count) || count <= 0) return;
+      setTelemetry((prev) => {
+        if (count <= prev.txCount) return prev;
+        persistTxCount(count);
+        return {
+          ...prev,
+          txCount: count,
+          lastTxTime: Date.now(),
+        };
+      });
+    },
+    [persistTxCount]
+  );
+
   // Commit canvas state to Solana L1
   const commitToSolanaL1 = useCallback(async (allPixels: Pixel[]) => {
     setIsCommitting(true);
@@ -288,6 +305,7 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     recordRemotePixel,
     recordRemoteBatch,
     initRemotePixels,
+    syncTxCount,
     commitToSolanaL1,
     isCommitting,
     lastCommitResult,
