@@ -26,7 +26,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           },
         },
         embeddedWallets: {
-          solana: { createOnLogin: 'users-without-wallets' },
+          solana: { createOnLogin: 'off' },
         },
         loginMethods: ['email', 'google', 'wallet'],
       }}
