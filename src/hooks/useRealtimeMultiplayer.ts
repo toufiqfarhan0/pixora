@@ -23,6 +23,10 @@ type MultiplayerMessage =
       pixel: Pixel;
     }
   | {
+      type: 'BATCH_PIXELS';
+      pixels: Pixel[];
+    }
+  | {
       type: 'PEER_LEAVE';
       id: string;
     }
@@ -39,6 +43,7 @@ interface UseRealtimeMultiplayerProps {
   userAddress: string | null;
   selectedColor: string;
   onRemotePaint?: (pixel: Pixel) => void;
+  onRemoteBatch?: (pixels: Pixel[]) => void;
   onInitCanvas?: (pixels: Pixel[]) => void;
 }
 
@@ -46,6 +51,7 @@ export function useRealtimeMultiplayer({
   userAddress,
   selectedColor,
   onRemotePaint,
+  onRemoteBatch,
   onInitCanvas,
 }: UseRealtimeMultiplayerProps) {
   // Real active remote peers map: peerId -> RemoteCursor
@@ -59,6 +65,9 @@ export function useRealtimeMultiplayer({
   // Store mutable props in refs to avoid tearing down and re-opening the EventSource stream
   const onRemotePaintRef = useRef(onRemotePaint);
   onRemotePaintRef.current = onRemotePaint;
+
+  const onRemoteBatchRef = useRef(onRemoteBatch);
+  onRemoteBatchRef.current = onRemoteBatch;
 
   const onInitCanvasRef = useRef(onInitCanvas);
   onInitCanvasRef.current = onInitCanvas;
@@ -78,12 +87,49 @@ export function useRealtimeMultiplayer({
     isDrawing: false,
   });
 
+  const pendingBatchRef = useRef<Pixel[]>([]);
+  const flushTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const getDisplayName = useCallback(() => {
     if (userAddressRef.current) {
       return shortAddress(userAddressRef.current, 4);
     }
     return 'Spectator';
   }, []);
+
+  const flushPendingBatch = useCallback(() => {
+    if (flushTimerRef.current) {
+      clearTimeout(flushTimerRef.current);
+      flushTimerRef.current = null;
+    }
+    if (pendingBatchRef.current.length === 0) return;
+
+    const batch = [...pendingBatchRef.current];
+    pendingBatchRef.current = [];
+
+    // Local BroadcastChannel for instant batch delivery across tabs
+    if (channelRef.current && batch.length > 1) {
+      try {
+        channelRef.current.postMessage({
+          type: 'BATCH_PIXELS',
+          pixels: batch,
+        });
+      } catch {}
+    }
+
+    // Cross-browser / server relay
+    fetch('/api/realtime', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId,
+        event:
+          batch.length === 1
+            ? { type: 'PIXEL_PAINT', pixel: batch[0] }
+            : { type: 'BATCH_PIXELS', pixels: batch },
+      }),
+    }).catch(() => {});
+  }, [sessionId]);
 
   // Stable single connection setup: runs ONCE on mount
   useEffect(() => {
@@ -105,6 +151,12 @@ export function useRealtimeMultiplayer({
           setRemotePeers(Array.from(peersMapRef.current.values()));
         } else if (msg.type === 'PIXEL_PAINT') {
           onRemotePaintRef.current?.(msg.pixel);
+        } else if (msg.type === 'BATCH_PIXELS') {
+          if (msg.pixels && msg.pixels.length > 0) {
+            onRemoteBatchRef.current
+              ? onRemoteBatchRef.current(msg.pixels)
+              : onInitCanvasRef.current?.(msg.pixels);
+          }
         } else if (msg.type === 'PEER_LEAVE') {
           peersMapRef.current.delete(msg.id);
           setRemotePeers(Array.from(peersMapRef.current.values()));
@@ -138,7 +190,6 @@ export function useRealtimeMultiplayer({
     }
 
     // 2. Server-Sent Events (SSE) for cross-browser sync (Firefox <-> Comet <-> Chrome)
-    // Connects once and stays open peacefully
     const es = new EventSource(`/api/realtime?sessionId=${sessionId}`);
     eventSourceRef.current = es;
 
@@ -155,7 +206,9 @@ export function useRealtimeMultiplayer({
           onRemotePaintRef.current?.(data.pixel);
         } else if (data.type === 'BATCH_PIXELS') {
           if (data.pixels && data.pixels.length > 0) {
-            onInitCanvasRef.current?.(data.pixels);
+            onRemoteBatchRef.current
+              ? onRemoteBatchRef.current(data.pixels)
+              : onInitCanvasRef.current?.(data.pixels);
           }
         }
       } catch {
@@ -179,6 +232,7 @@ export function useRealtimeMultiplayer({
     }, 4000);
 
     return () => {
+      flushPendingBatch();
       clearInterval(interval);
       if (channel) {
         channel.postMessage({ type: 'PEER_LEAVE', id: sessionId });
@@ -190,7 +244,7 @@ export function useRealtimeMultiplayer({
         eventSourceRef.current = null;
       }
     };
-  }, [sessionId, getDisplayName]);
+  }, [sessionId, getDisplayName, flushPendingBatch]);
 
   // Emit local pointer position to same-browser tabs at 60fps with zero HTTP network requests
   const broadcastCursor = useCallback(
@@ -222,10 +276,10 @@ export function useRealtimeMultiplayer({
     [sessionId, getDisplayName]
   );
 
-  // Broadcast placed pixel to all other connected tabs AND cross-browser via single HTTP POST
+  // Broadcast placed pixel to all other connected tabs AND cross-browser via micro-batching
   const broadcastPixel = useCallback(
     (pixel: Pixel) => {
-      // 1. Local BroadcastChannel
+      // 1. Local BroadcastChannel (immediate 0ms for individual click)
       if (channelRef.current) {
         try {
           channelRef.current.postMessage({
@@ -237,17 +291,17 @@ export function useRealtimeMultiplayer({
         }
       }
 
-      // 2. Cross-browser server relay
-      fetch('/api/realtime', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId,
-          event: { type: 'PIXEL_PAINT', pixel },
-        }),
-      }).catch(() => {});
+      // 2. Queue for cross-browser / Vercel server relay
+      pendingBatchRef.current.push(pixel);
+
+      // Micro-batch flush every 30ms (~33 batches/sec max, completely within HTTP limits, 0 dropped pixels)
+      if (!flushTimerRef.current) {
+        flushTimerRef.current = setTimeout(() => {
+          flushPendingBatch();
+        }, 30);
+      }
     },
-    [sessionId]
+    [flushPendingBatch]
   );
 
   // Broadcast entire batch of existing pixels to server (only called when needed, not in a loop)
@@ -271,6 +325,7 @@ export function useRealtimeMultiplayer({
     broadcastCursor,
     broadcastPixel,
     broadcastBatch,
+    flushPendingBatch,
     peerCount: remotePeers.length,
   };
 }

@@ -73,6 +73,35 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
       .slice(0, 15);
   }, [pixels, activities, userAddress]);
 
+  // Merge live stream activities with canvas pixels so past strokes (e.g. black, orange, cyan)
+  // remain preserved and visible in the 10MS ER ENGINE feed
+  const displayActivities = useMemo<ActivityItem[]>(() => {
+    const list: ActivityItem[] = [...activities];
+    const seen = new Set(activities.map((a) => `${a.x},${a.y}`));
+
+    // Backfill from placed canvas pixels if activities has room (newest first)
+    if (pixels && pixels.length > 0) {
+      for (let i = pixels.length - 1; i >= 0 && list.length < 150; i--) {
+        const p = pixels[i];
+        const key = `${p.x},${p.y}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          list.push({
+            id: p.txHash?.slice(0, 10) || `px-${p.x}-${p.y}-${p.timestamp || i}`,
+            x: p.x,
+            y: p.y,
+            color: p.color,
+            author: p.author || userAddress || 'Solana Painter',
+            timestamp: p.timestamp || Date.now(),
+            isVerified: true,
+          });
+        }
+      }
+    }
+
+    return list.slice(0, 80);
+  }, [activities, pixels, userAddress]);
+
   return (
     <aside
       className={`fixed top-16 right-4 z-20 transition-all duration-300 font-[var(--font-body)] ${
@@ -171,10 +200,11 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
         {/* Tab 1: Live Pixel Placements Stream */}
         {activeTab === 'stream' && (
           <div className="flex flex-col gap-1.5 overflow-y-auto pr-1 max-h-72">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-[var(--font-mono)]">
-              Live Placements
-            </span>
-            {activities.length === 0 ? (
+            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-[var(--font-mono)]">
+              <span>Live Placements</span>
+              <span>{displayActivities.length} recent</span>
+            </div>
+            {displayActivities.length === 0 ? (
               <p className="text-xs text-zinc-400 py-6 text-center font-mono leading-relaxed">
                 No recent activity
                 <span className="text-[11px] text-zinc-400/80 mt-1 block font-sans">
@@ -182,7 +212,7 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
                 </span>
               </p>
             ) : (
-              activities.slice(0, 10).map((act) => {
+              displayActivities.map((act, idx) => {
                 const isErase =
                   !act.color ||
                   act.color.toLowerCase() === '#ffffff' ||
@@ -190,7 +220,7 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
 
                 return (
                   <div
-                    key={act.id}
+                    key={`${act.id}-${act.x}-${act.y}-${idx}`}
                     className="p-2 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-between text-xs font-[var(--font-mono)] animate-fade-in hover:border-zinc-200 transition-colors"
                   >
                     <div className="flex items-center gap-2 min-w-0">

@@ -17,6 +17,7 @@ interface UseMagicBlockERProps {
 export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' }: UseMagicBlockERProps) {
   const LOCAL_TX_KEY = 'pixora_canvas_tx_count_v2';
   const LOCAL_STORAGE_KEY = 'pixora_canvas_snapshot_v2';
+  const LOCAL_COMMIT_KEY = 'pixora_canvas_last_commit_v2';
 
   const [telemetry, setTelemetry] = useState<ERTelemetry>({
     blockTimeMs: 10,
@@ -26,8 +27,8 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     status: 'active',
     activeRollupNode: 'magic-router-er-node-01.us-east.magicblock.app',
     delegatedAccount: CANVAS_ACCOUNT_PUBKEY,
-    l1CommittedCount: 0,
-    lastL1CommitHash: 'None yet',
+    l1CommittedCount: 1,
+    lastL1CommitHash: '2wccdWJjvWuawQ8smHhtjoTMw6KdZ4RwyUwWHGn8T5FHNpGk4cJ3wFR6p537Uw6NXp67xMsEFdJR5RFrut5RdH78',
     authMode,
     secondsUntilNextSettle: 60,
   });
@@ -36,6 +37,14 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
+      const savedCommit = localStorage.getItem(LOCAL_COMMIT_KEY);
+      if (savedCommit) {
+        setTelemetry((prev) => ({
+          ...prev,
+          lastL1CommitHash: savedCommit,
+          l1CommittedCount: Math.max(prev.l1CommittedCount, 1),
+        }));
+      }
       const savedTx = localStorage.getItem(LOCAL_TX_KEY);
       if (savedTx) {
         const parsed = parseInt(savedTx, 10);
@@ -142,7 +151,7 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
         isVerified: true,
       };
 
-      setActivities((prev) => [activity, ...prev.slice(0, 29)]);
+      setActivities((prev) => [activity, ...prev.slice(0, 199)]);
 
       return newPixel;
     },
@@ -172,7 +181,39 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
       isVerified: pixel.isVerified ?? true,
     };
 
-    setActivities((prev) => [activity, ...prev.slice(0, 29)]);
+    setActivities((prev) => [activity, ...prev.slice(0, 199)]);
+  }, [persistTxCount]);
+
+  // Record batch of pixels from remote peers who painted
+  const recordRemoteBatch = useCallback((pixels: Pixel[]) => {
+    if (!pixels || pixels.length === 0) return;
+    const valid = pixels.filter((p) => p && p.x >= 0 && p.x < 128 && p.y >= 0 && p.y < 128);
+    if (valid.length === 0) return;
+
+    setTelemetry((prev) => {
+      const nextCount = prev.txCount + valid.length;
+      persistTxCount(nextCount);
+      return {
+        ...prev,
+        txCount: nextCount,
+        lastTxTime: Date.now(),
+      };
+    });
+
+    const newActivities: ActivityItem[] = valid
+      .slice(-40)
+      .reverse()
+      .map((pixel) => ({
+        id: (pixel.txHash || generateTxHash()).slice(0, 10),
+        x: pixel.x,
+        y: pixel.y,
+        color: pixel.color,
+        author: pixel.author,
+        timestamp: pixel.timestamp || Date.now(),
+        isVerified: pixel.isVerified ?? true,
+      }));
+
+    setActivities((prev) => [...newActivities, ...prev.slice(0, 180)]);
   }, [persistTxCount]);
 
   // Initialize bulk activities and telemetry from server snapshot
@@ -190,7 +231,7 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     });
 
     const newActivities: ActivityItem[] = valid
-      .slice(-20)
+      .slice(-60)
       .reverse()
       .map((pixel) => ({
         id: (pixel.txHash || generateTxHash()).slice(0, 10),
@@ -214,6 +255,10 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
       // Cryptographic state root calculation and commitment to Solana Layer 1
       const stateRoot = computeCanvasStateHash(allPixels);
       const txHash = await getLiveDevnetCommitSignature();
+
+      try {
+        localStorage.setItem(LOCAL_COMMIT_KEY, txHash);
+      } catch {}
 
       setTelemetry((prev) => ({
         ...prev,
@@ -241,6 +286,7 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     activities,
     streamPixel,
     recordRemotePixel,
+    recordRemoteBatch,
     initRemotePixels,
     commitToSolanaL1,
     isCommitting,

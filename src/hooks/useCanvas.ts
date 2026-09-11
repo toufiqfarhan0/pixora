@@ -39,6 +39,7 @@ interface UseCanvasProps {
   onInspectPixel?: (x: number, y: number, pixel: Pixel | null) => void;
   initialPixels?: Pixel[];
   onCursorMove?: (x: number, y: number, isDrawing: boolean) => void;
+  onStrokeEnd?: () => void;
   showHeatmap?: boolean;
   canDraw?: boolean;
   userAddress?: string | null;
@@ -55,6 +56,7 @@ export function useCanvas({
   onInspectPixel,
   initialPixels = [],
   onCursorMove,
+  onStrokeEnd,
   showHeatmap = false,
   canDraw = true,
   userAddress = null,
@@ -491,8 +493,9 @@ export function useCanvas({
       isDrawingRef.current = false;
       lastPlacedRef.current = null;
       setPixelsVersion((v) => v + 1);
+      onStrokeEnd?.();
     }
-  }, []);
+  }, [onStrokeEnd]);
 
   // External update (from peer or ER sync)
   const setRemotePixel = useCallback(

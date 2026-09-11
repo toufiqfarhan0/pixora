@@ -8,6 +8,7 @@ interface CommitModalProps {
   isOpen: boolean;
   onClose: () => void;
   pixels: Pixel[];
+  txCount?: number;
   onCommit: (allPixels: Pixel[]) => Promise<{
     txHash: string;
     stateRoot: string;
@@ -29,6 +30,7 @@ export const CommitModal: React.FC<CommitModalProps> = ({
   isOpen,
   onClose,
   pixels,
+  txCount = 0,
   onCommit,
   isCommitting,
   lastCommitResult,
@@ -97,18 +99,24 @@ export const CommitModal: React.FC<CommitModalProps> = ({
           )}
 
           {/* Metrics summary */}
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-100">
-              <span className="text-[10px] text-zinc-400 uppercase font-bold">Active Pixels</span>
-              <p className="text-lg font-bold text-zinc-900 mt-0.5">{pixels.length.toLocaleString()}</p>
-            </div>
-            <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-100">
-              <span className="text-[10px] text-zinc-400 uppercase font-bold">Gas Saved on ER</span>
-              <p className="text-lg font-bold text-[#FF4D26] mt-0.5">
-                ${(pixels.length * 0.002).toFixed(2)} USD
-              </p>
-            </div>
-          </div>
+          {(() => {
+            const displayCount = Math.max(pixels.length, txCount || 0);
+            const gasSavedUsd = (displayCount * 0.002).toFixed(2);
+            return (
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-100">
+                  <span className="text-[10px] text-zinc-400 uppercase font-bold">Active Pixels</span>
+                  <p className="text-lg font-bold text-zinc-900 mt-0.5">{displayCount.toLocaleString()}</p>
+                </div>
+                <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-100">
+                  <span className="text-[10px] text-zinc-400 uppercase font-bold">Gas Saved on ER</span>
+                  <p className="text-lg font-bold text-[#FF4D26] mt-0.5">
+                    ${gasSavedUsd} USD
+                  </p>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Cryptographic State Hash */}
           <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-100 flex flex-col gap-1">

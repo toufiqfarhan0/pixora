@@ -100,6 +100,7 @@ export const App: React.FC<AppProps> = ({ initialView = 'landing' }) => {
     activities,
     streamPixel,
     recordRemotePixel,
+    recordRemoteBatch,
     initRemotePixels,
     commitToSolanaL1,
     isCommitting,
@@ -129,12 +130,16 @@ export const App: React.FC<AppProps> = ({ initialView = 'landing' }) => {
   const setMultipleRemotePixelsRef = useRef<((pixels: Pixel[]) => void) | null>(null);
 
   // Real-time peer cursors & multiplayer sync across tabs, windows, and browsers (Firefox <-> Comet/Chrome)
-  const { remotePeers, broadcastCursor, broadcastPixel, broadcastBatch, peerCount } = useRealtimeMultiplayer({
+  const { remotePeers, broadcastCursor, broadcastPixel, broadcastBatch, flushPendingBatch, peerCount } = useRealtimeMultiplayer({
     userAddress,
     selectedColor,
     onRemotePaint: (pixel) => {
       setRemotePixelRef.current?.(pixel);
       recordRemotePixel(pixel);
+    },
+    onRemoteBatch: (pixels) => {
+      setMultipleRemotePixelsRef.current?.(pixels);
+      recordRemoteBatch(pixels);
     },
     onInitCanvas: (pixels) => {
       setMultipleRemotePixelsRef.current?.(pixels);
@@ -215,6 +220,7 @@ export const App: React.FC<AppProps> = ({ initialView = 'landing' }) => {
     onInspectPixel: handleInspectPixel,
     initialPixels,
     onCursorMove: broadcastCursor,
+    onStrokeEnd: flushPendingBatch,
     showHeatmap,
     canDraw: authenticated,
     userAddress,
@@ -414,6 +420,7 @@ export const App: React.FC<AppProps> = ({ initialView = 'landing' }) => {
         isOpen={isCommitModalOpen}
         onClose={() => setIsCommitModalOpen(false)}
         pixels={allPixelsArray}
+        txCount={telemetry.txCount}
         onCommit={commitToSolanaL1}
         isCommitting={isCommitting}
         lastCommitResult={lastCommitResult}

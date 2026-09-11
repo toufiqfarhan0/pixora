@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Zap, Activity, Fuel, Shield, Cpu, ChevronUp, ExternalLink, X } from 'lucide-react';
+import { Zap, Activity, Fuel, Shield, Cpu, ChevronUp, X } from 'lucide-react';
 import { ERTelemetry, Pixel } from '../types/canvas';
 import { CANVAS_ACCOUNT_PUBKEY, shortAddress } from '../lib/magicblock';
 
@@ -12,26 +12,9 @@ interface TelemetryHUDProps {
 }
 
 export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ telemetry, hoveredPixel, loginMethod }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const hudRef = useRef<HTMLDivElement>(null);
   const gasSavedUsd = (telemetry.txCount * 0.002).toFixed(2);
-
-  // Close HUD popover when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-      if (hudRef.current && !hudRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, [isOpen]);
 
   return (
     <div ref={hudRef} className="absolute bottom-4 left-4 z-30 hidden md:flex flex-col items-start font-[var(--font-body)]">
@@ -106,18 +89,35 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ telemetry, hoveredPi
             </div>
           </div>
 
-          {/* Router & Network info */}
+          {/* Live Hovered Pixel Coordinates */}
+          {hoveredPixel && hoveredPixel.x >= 0 && hoveredPixel.x < 100 && hoveredPixel.y >= 0 && hoveredPixel.y < 100 && (
+            <div className="pt-2 border-t border-zinc-100 flex items-center justify-between text-[11px] font-mono mb-2">
+              <span className="text-zinc-500 flex items-center gap-1.5">
+                <span>Pixel:</span>
+                <span className="font-bold text-[#FF4D26]">
+                  ({hoveredPixel.x}, {hoveredPixel.y})
+                </span>
+              </span>
+              {hoveredPixel.pixel ? (
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="w-2.5 h-2.5 rounded-sm border border-black/10 shrink-0"
+                    style={{ backgroundColor: hoveredPixel.pixel.color }}
+                  />
+                  <span className="text-zinc-700 font-medium">
+                    {shortAddress(hoveredPixel.pixel.author, 4)}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-zinc-400">Empty</span>
+              )}
+            </div>
+          )}
+
+          {/* Network info */}
           <div className="pt-2 border-t border-zinc-100 flex items-center justify-between text-[10px] text-zinc-500">
             <span>Cluster: Solana Devnet</span>
-            <a
-              href="https://explorer.solana.com/address/8TnYwxdZvPywRioeUkkWTwaynU7jRTfEvF2GJizBvk9A?cluster=devnet"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[#FF4D26] hover:underline flex items-center gap-0.5 font-semibold"
-            >
-              <span>Explorer</span>
-              <ExternalLink className="h-2.5 w-2.5" />
-            </a>
+            <span className="text-zinc-400 font-sans">Ephemeral Rollup Active</span>
           </div>
         </div>
       )}
@@ -135,6 +135,12 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ telemetry, hoveredPi
         <span suppressHydrationWarning className="text-[#FF4D26] font-semibold text-[11px]">$0.00 Gas</span>
         <span className="text-zinc-300">·</span>
         <span suppressHydrationWarning className="text-zinc-500 text-[11px]">{telemetry.txCount.toLocaleString()} txs</span>
+        {hoveredPixel && hoveredPixel.x >= 0 && hoveredPixel.x < 100 && hoveredPixel.y >= 0 && hoveredPixel.y < 100 && (
+          <>
+            <span className="text-zinc-300">·</span>
+            <span className="font-bold text-[#FF4D26] text-[11px]">({hoveredPixel.x}, {hoveredPixel.y})</span>
+          </>
+        )}
         <ChevronUp
           className={`h-3.5 w-3.5 text-zinc-400 shrink-0 transition-transform duration-200 ${
             isOpen ? 'rotate-180 text-zinc-700' : ''

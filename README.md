@@ -2,14 +2,19 @@
 
 A real-time massively shared pixel canvas on Solana. Everyone paints the same 128×128 board at the same time, with sub-10ms confirmation and zero gas fees.
 
+🚀 **Live Deployment**: [https://pixora-eta-rust.vercel.app/](https://pixora-eta-rust.vercel.app/)  
+📹 **Demo Video Folder**: [Google Drive Demo Folder](https://drive.google.com/drive/folders/14_99VIrGWxsT-F50CVOUHnOT44g0xuH9?usp=drive_link)
+
 If you have used Reddit's *r/place* or collaborative drawing tools the concept will feel familiar, except here every pixel is cryptographically signed and settled on Solana. There is a 16,384-cell grid: pick your color and tool, and when you click or drag, your strokes appear instantly across all connected screens in real time.
 
 Built for Solana Blitz v8, which is themed around collaborative games and requires a MagicBlock Ephemeral Rollup integration.
 
 | | |
-|---|---|
+| **Live App** | [https://pixora-eta-rust.vercel.app/](https://pixora-eta-rust.vercel.app/) |
+| **Demo Video** | [Google Drive Folder](https://drive.google.com/drive/folders/14_99VIrGWxsT-F50CVOUHnOT44g0xuH9?usp=drive_link) |
 | **Program ID** | `Pxra6Kev7iEom8n9zF2fHQKwhu68hL4WnU2qVwB7uS8` |
-| **Canvas Account (PDA)** | [`8TnYwxdZvPywRioeUkkWTwaynU7jRTfEvF2GJizBvk9A`](https://explorer.solana.com/address/8TnYwxdZvPywRioeUkkWTwaynU7jRTfEvF2GJizBvk9A?cluster=devnet) |
+| **Canvas Account (PDA)** | `8TnYwxdZvPywRioeUkkWTwaynU7jRTfEvF2GJizBvk9A` (Delegated to ER) |
+| **L1 Settlement Tx** | [`2wccdWJj...ut5RdH78`](https://explorer.solana.com/tx/2wccdWJjvWuawQ8smHhtjoTMw6KdZ4RwyUwWHGn8T5FHNpGk4cJ3wFR6p537Uw6NXp67xMsEFdJR5RFrut5RdH78?cluster=devnet) |
 | **Network** | Solana Devnet |
 | **Rollup Layer** | MagicBlock Ephemeral Rollup (`https://devnet.magicblock.app`) |
 | **Authentication** | Privy Web3 Auth (MetaMask & Socials) |

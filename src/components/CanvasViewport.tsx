@@ -69,7 +69,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
       />
 
       {/* Top Left Viewport Status & Control Hints */}
-      <div className="absolute top-4 left-4 pointer-events-none z-10 flex flex-col items-start gap-2">
+      <div className="absolute top-4 left-4 pointer-events-none z-10 flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 font-[var(--font-mono)] text-[11px] text-zinc-600 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-zinc-200/80 shadow-subtle">
           <div className="flex items-center gap-1.5 font-semibold text-brand-600">
             {toolMode === 'inspect' ? (
@@ -95,6 +95,29 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
           </span>
         </div>
 
+        {/* Live Cursor Coordinate Pill - Placed cleanly in top-left bar, never colliding or hiding behind buttons */}
+        {hoveredPixel && hoveredPixel.x >= 0 && hoveredPixel.x < width && hoveredPixel.y >= 0 && hoveredPixel.y < height && (
+          <div className="flex items-center gap-2 font-[var(--font-mono)] text-[11px] text-zinc-700 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-zinc-200/90 shadow-subtle animate-fade-in">
+            <span className="font-bold text-[#FF4D26]">
+              ({hoveredPixel.x}, {hoveredPixel.y})
+            </span>
+            {hoveredPixel.pixel ? (
+              <>
+                <span className="text-zinc-300">·</span>
+                <span
+                  className="w-2.5 h-2.5 rounded-sm border border-black/10 shrink-0"
+                  style={{ backgroundColor: hoveredPixel.pixel.color }}
+                />
+                <span className="text-zinc-600 font-medium">
+                  {shortAddress(hoveredPixel.pixel.author, 4)}
+                </span>
+              </>
+            ) : (
+              <span className="text-zinc-400">Empty</span>
+            )}
+          </div>
+        )}
+
         {/* Battle Heatmap Status Badge */}
         {showHeatmap && (
           <div className="flex items-center gap-1.5 font-[var(--font-mono)] text-[11px] font-bold text-white bg-gradient-to-r from-amber-500 to-[#FF4D26] px-3 py-1 rounded-full shadow-sm animate-fade-in">
@@ -103,29 +126,6 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
           </div>
         )}
       </div>
-
-      {/* Live Cursor Coordinate Pill */}
-      {hoveredPixel && hoveredPixel.x >= 0 && hoveredPixel.x < width && hoveredPixel.y >= 0 && hoveredPixel.y < height && (
-        <div className="absolute top-4 right-80 pointer-events-none z-10 hidden md:flex items-center gap-2 font-[var(--font-mono)] text-[11px] text-zinc-700 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-200/90 shadow-subtle animate-fade-in">
-          <span className="font-bold text-[#FF4D26]">
-            ({hoveredPixel.x}, {hoveredPixel.y})
-          </span>
-          {hoveredPixel.pixel ? (
-            <>
-              <span className="text-zinc-300">·</span>
-              <span
-                className="w-2.5 h-2.5 rounded-sm border border-black/10 shrink-0"
-                style={{ backgroundColor: hoveredPixel.pixel.color }}
-              />
-              <span className="text-zinc-500 font-medium">
-                {shortAddress(hoveredPixel.pixel.author, 4)}
-              </span>
-            </>
-          ) : (
-            <span className="text-zinc-400">Empty</span>
-          )}
-        </div>
-      )}
     </div>
   );
 };
