@@ -1,0 +1,247 @@
+{
+  "version": "0.1.0",
+  "name": "pixora_canvas",
+  "instructions": [
+    {
+      "name": "initializeCanvas",
+      "accounts": [
+        {
+          "name": "canvas",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "canvas"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "width",
+          "type": "u16"
+        },
+        {
+          "name": "height",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "placePixel",
+      "accounts": [
+        {
+          "name": "canvas",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "x",
+          "type": "u8"
+        },
+        {
+          "name": "y",
+          "type": "u8"
+        },
+        {
+          "name": "r",
+          "type": "u8"
+        },
+        {
+          "name": "g",
+          "type": "u8"
+        },
+        {
+          "name": "b",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "delegateCanvas",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "canvas",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "delegationProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "commitFrequencyMs",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "commitCanvas",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "canvas",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "magicProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Canvas",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "width",
+            "type": "u16"
+          },
+          {
+            "name": "height",
+            "type": "u16"
+          },
+          {
+            "name": "totalPixelsPlaced",
+            "type": "u64"
+          },
+          {
+            "name": "stateRoot",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "lastCommittedSlot",
+            "type": "u64"
+          },
+          {
+            "name": "isDelegated",
+            "type": "bool"
+          }
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "PixelPlacedEvent",
+      "fields": [
+        {
+          "name": "x",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "y",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "r",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "g",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "b",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "author",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "timestamp",
+          "type": "i64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "CanvasCommittedEvent",
+      "fields": [
+        {
+          "name": "stateRoot",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          },
+          "index": false
+        },
+        {
+          "name": "slot",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "pixelCount",
+          "type": "u32",
+          "index": false
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "address": "Pxra6Kev7iEom8n9zF2fHQKwhu68hL4WnU2qVwB7uS8"
+  }
+}

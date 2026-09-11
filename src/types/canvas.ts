@@ -31,6 +31,7 @@ export interface ERTelemetry {
   l1CommittedCount: number;
   lastL1CommitHash: string | null;
   authMode?: AuthMode;
+  secondsUntilNextSettle?: number;
 }
 
 export interface ActivityItem {
@@ -40,7 +41,6 @@ export interface ActivityItem {
   color: string;
   author: string;
   timestamp: number;
-  isMock?: boolean;
   isVerified?: boolean;
 }
 

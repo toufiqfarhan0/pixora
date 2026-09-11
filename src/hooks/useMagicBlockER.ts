@@ -26,7 +26,20 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     l1CommittedCount: 0,
     lastL1CommitHash: 'None yet',
     authMode,
+    secondsUntilNextSettle: 60,
   });
+
+  // 60-second periodic L1 settlement countdown ticker
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTelemetry((prev) => {
+        const current = prev.secondsUntilNextSettle ?? 60;
+        const next = current <= 1 ? 60 : current - 1;
+        return { ...prev, secondsUntilNextSettle: next };
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Sync authMode to telemetry
   useEffect(() => {
@@ -112,6 +125,31 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     setActivities((prev) => [activity, ...prev.slice(0, 29)]);
   }, []);
 
+  // Initialize bulk activities and telemetry from server snapshot
+  const initRemotePixels = useCallback((pixels: Pixel[]) => {
+    if (!pixels || pixels.length === 0) return;
+    setTelemetry((prev) => ({
+      ...prev,
+      txCount: Math.max(prev.txCount, pixels.length),
+      lastTxTime: Date.now(),
+    }));
+
+    const newActivities: ActivityItem[] = pixels
+      .slice(-20)
+      .reverse()
+      .map((pixel) => ({
+        id: (pixel.txHash || generateTxHash()).slice(0, 10),
+        x: pixel.x,
+        y: pixel.y,
+        color: pixel.color,
+        author: pixel.author,
+        timestamp: pixel.timestamp || Date.now(),
+        isVerified: pixel.isVerified ?? true,
+      }));
+
+    setActivities(newActivities);
+  }, []);
+
   // Commit canvas state to Solana L1
   const commitToSolanaL1 = useCallback(async (allPixels: Pixel[]) => {
     setIsCommitting(true);
@@ -148,6 +186,7 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     activities,
     streamPixel,
     recordRemotePixel,
+    initRemotePixels,
     commitToSolanaL1,
     isCommitting,
     lastCommitResult,

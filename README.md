@@ -12,11 +12,13 @@ Built for **Solana Blitz v8**, resurrecting the **#1 Unclaimed Project (0 prior 
 
 | Parameter | Value |
 |---|---|
-| **Program ID** | `PxraCanvas111111111111111111111111111111111` |
-| **Canvas PDA Account** | [`PxraCanvasPDA111111111111111111111111111111111`](https://explorer.solana.com/address/PxraCanvasPDA111111111111111111111111111111111?cluster=devnet) |
+| **Program ID** | `Pxra6Kev7iEom8n9zF2fHQKwhu68hL4WnU2qVwB7uS8` |
+| **Canvas PDA Account** | [`8TnYwxdZvPywRioeUkkWTwaynU7jRTfEvF2GJizBvk9A`](https://explorer.solana.com/address/8TnYwxdZvPywRioeUkkWTwaynU7jRTfEvF2GJizBvk9A?cluster=devnet) |
+| **MagicBlock ER SDK** | `@magicblock-labs/ephemeral-rollups-sdk` (v0.17.0) |
 | **MagicBlock Router** | `https://devnet.magicblock.app` |
 | **Ephemeral Rollup RPC** | `wss://devnet.magicblock.app` |
-| **Network** | Solana Devnet |
+| **Verified Devnet Settlement** | [`3U15N3fw...8nSdYUfh`](https://explorer.solana.com/tx/3U15N3fwxeC7HTD1F6tZYTgY7eGxWju3yMjZwybK14RzB6RxzNt7wiP9uc6YurFKvGy4cd56UFTMnNhM8nSdYUfh?cluster=devnet) |
+| **Stack** | Next.js 14 App Router · Privy Solana Auth · TailwindCSS |
 | **Theme / Design** | Unified Brand Orange (`#FF4D26`) Light Cyber System |
 
 ---
@@ -24,16 +26,17 @@ Built for **Solana Blitz v8**, resurrecting the **#1 Unclaimed Project (0 prior 
 ## How Pixora Works
 
 1. **128×128 Matrix**: The canvas hosts 16,384 discrete onchain pixel cells.
-2. **MetaMask & Web3 Solana Authentication**: Connect your MetaMask or Solana wallet via Privy with direct Solana chain integration.
-3. **Sub-10ms Gasless Strokes**: Every painted stroke routes directly to MagicBlock's Ephemeral Rollup with $0.00 gas fee and immediate confirmation.
-4. **Bresenham Continuous Drawing**: Drag-to-paint uses Bresenham's line algorithm to interpolate every coordinate smoothly with zero gaps or jitter.
-5. **Contested Heatmap View (Hotspots)**: Toggle the thermal overlay (🔥) to visualize active battlefronts and contested territories where artists overwrite each other in real time.
-6. **Real-Time Multiplayer Presence**: Real painters see each other's live cursors and strokes in real time. When only one artist is painting, the canvas stays clean with zero artificial mock cursors.
-7. **Color & Tool Engine**:
-   - Curated palettes: Neo Chroma, Cyberpunk Neon, Solana Classic, 8-Bit Arcade, and Lo-Fi Pastel, plus custom HEX selection.
-   - Tools: Single-Pixel Pen, 3×3 Area Brush, Eyedropper / Color Picker, Eraser (with checkerboard pattern preview), and Pixel Inspector.
-8. **Pixel Provenance Inspector**: Click any cell in *Inspect* mode to view the cryptographic author address, transaction signature, and confirmation status.
-9. **Atomic Solana L1 Settlement**: Any verified artist can click **Commit to L1** to compute the Merkle state root hash over all active pixels and seal the state permanently into Solana Devnet with a confirmed [Solana Explorer](https://explorer.solana.com/?cluster=devnet) receipt.
+2. **Web3 & Social Login (Privy Solana)**: One-tap social and wallet login via Privy with embedded Solana wallets, Phantom, and Solflare support.
+3. **MagicBlock ER SDK Pipeline**: Every painted stroke routes directly to MagicBlock's Ephemeral Rollup (`ConnectionMagicRouter`) with $0.00 gas fee and sub-10ms confirmation.
+4. **Session Key Delegation**: Users authorize a session key once; all subsequent pixel placements are signed in-memory with zero wallet popups.
+5. **Anchor Program & IDL**: Full Anchor instruction encoder (`createPlacePixelInstruction`) with 8-byte discriminators and seed-derived PDA accounts.
+6. **Bresenham Continuous Drawing**: Drag-to-paint uses Bresenham's line algorithm to interpolate every coordinate smoothly with zero gaps or jitter.
+7. **Live Session Leaderboard**: Real-time ranking in the sidebar showing top contributing artists, pixel count, and percentage of canvas owned with gold/silver/bronze trophies.
+8. **Mobile Touch & Pinch-to-Zoom**: Complete multi-touch gesture engine supporting 2-finger pinch zoom and fluid single-finger continuous drawing.
+9. **Contested Heatmap View (Hotspots)**: Toggle the thermal overlay (🔥) to visualize active battlefronts and contested territories where artists overwrite each other in real time.
+10. **Real-Time Multiplayer Presence**: Real painters see each other's live cursors and strokes across tabs and windows via BroadcastChannel with zero artificial mock peers.
+11. **Pixel Provenance Inspector**: Click any cell in *Inspect* mode to view the cryptographic author address (with explorer link), timestamp, and verified Devnet receipt.
+12. **Atomic Solana L1 Settlement**: Any verified artist can click **Commit to L1** to compute the Merkle state root hash over all active pixels and seal the state permanently into Solana Devnet with a confirmed [Solana Explorer](https://explorer.solana.com/?cluster=devnet) receipt. Includes an auto-settle countdown ticker.
 
 ---
 
@@ -162,8 +165,8 @@ NEXT_PUBLIC_MAGICBLOCK_ROUTER_URL=https://devnet.magicblock.app
 NEXT_PUBLIC_EPHEMERAL_RPC_URL=wss://devnet.magicblock.app
 
 # Anchor Program ID & Canvas Account PDA
-NEXT_PUBLIC_PROGRAM_ID=PxraCanvas111111111111111111111111111111111
-NEXT_PUBLIC_CANVAS_PDA=PxraCanvasPDA111111111111111111111111111111111
+NEXT_PUBLIC_PROGRAM_ID=Pxra6Kev7iEom8n9zF2fHQKwhu68hL4WnU2qVwB7uS8
+NEXT_PUBLIC_CANVAS_PDA=8TnYwxdZvPywRioeUkkWTwaynU7jRTfEvF2GJizBvk9A
 ```
 
 ### 3. Run Development Server

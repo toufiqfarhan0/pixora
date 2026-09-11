@@ -11,6 +11,7 @@ import {
   Palette as PaletteIcon,
   Search,
   Flame,
+  Sparkles,
 } from 'lucide-react';
 import { ToolMode } from '../types/canvas';
 import { PALETTES } from '../lib/palette';
@@ -27,6 +28,8 @@ interface ToolbarProps {
   onExportPNG: () => void;
   showHeatmap: boolean;
   onToggleHeatmap: () => void;
+  showTemplateGuide?: boolean;
+  onToggleTemplateGuide?: () => void;
   energy: number;
   maxEnergy: number;
   isRecharging: boolean;
@@ -43,6 +46,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onExportPNG,
   showHeatmap = false,
   onToggleHeatmap,
+  showTemplateGuide = false,
+  onToggleTemplateGuide,
   energy,
   maxEnergy,
   isRecharging,
@@ -151,6 +156,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             title={showHeatmap ? 'Disable Battle Heatmap' : 'Battle Heatmap (View Contested Zones)'}
           >
             <Flame className={`h-4 w-4 ${showHeatmap ? 'animate-pulse' : ''}`} />
+          </button>
+
+          <button
+            onClick={onToggleTemplateGuide}
+            className={`p-2 rounded-xl transition-all ${
+              showTemplateGuide
+                ? 'bg-gradient-to-r from-purple-600 to-emerald-500 text-white shadow-sm scale-105'
+                : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+            }`}
+            title={showTemplateGuide ? 'Disable Solana Template Guide' : 'Community Solana Template Guide Overlay'}
+          >
+            <Sparkles className={`h-4 w-4 ${showTemplateGuide ? 'animate-pulse' : ''}`} />
           </button>
         </div>
 

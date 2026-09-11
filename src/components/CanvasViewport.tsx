@@ -4,7 +4,7 @@ import React from 'react';
 import { ToolMode, Pixel } from '../types/canvas';
 import { MultiplayerCursors } from './MultiplayerCursors';
 import { RemoteCursor } from '../hooks/useRealtimeMultiplayer';
-import { Flame } from 'lucide-react';
+import { Flame, Sparkles } from 'lucide-react';
 import { shortAddress } from '../lib/magicblock';
 
 interface CanvasViewportProps {
@@ -16,10 +16,11 @@ interface CanvasViewportProps {
   height: number;
   handlePointerDown: (e: React.PointerEvent) => void;
   handlePointerMove: (e: React.PointerEvent) => void;
-  handlePointerUp: () => void;
+  handlePointerUp: (e?: React.PointerEvent) => void;
   remoteCursors?: RemoteCursor[];
   hoveredPixel?: { x: number; y: number; pixel?: Pixel } | null;
   showHeatmap?: boolean;
+  showTemplateGuide?: boolean;
 }
 
 export const CanvasViewport: React.FC<CanvasViewportProps> = ({
@@ -35,6 +36,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
   remoteCursors = [],
   hoveredPixel = null,
   showHeatmap = false,
+  showTemplateGuide = false,
 }) => {
   const getCursorStyle = () => {
     switch (toolMode) {
@@ -53,13 +55,14 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
 
   return (
     <div
-      className={`relative w-full h-full overflow-hidden light-cyber-grid bg-slate-100/60 ${getCursorStyle()}`}
+      className={`relative w-full h-full overflow-hidden light-cyber-grid bg-slate-100/60 touch-none select-none ${getCursorStyle()}`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       onPointerLeave={handlePointerUp}
     >
-      <canvas ref={canvasRef} className="pixel-canvas absolute inset-0 w-full h-full" />
+      <canvas ref={canvasRef} className="pixel-canvas absolute inset-0 w-full h-full touch-none select-none" />
 
       {/* Real Live Multiplayer Cursors Overlay (zero hardcoding, only real connected users) */}
       <MultiplayerCursors
@@ -94,6 +97,14 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
           <div className="flex items-center gap-1.5 font-[var(--font-mono)] text-[11px] font-bold text-white bg-gradient-to-r from-amber-500 to-[#FF4D26] px-3 py-1 rounded-full shadow-sm animate-fade-in">
             <Flame className="w-3.5 h-3.5 animate-pulse text-yellow-200" />
             <span>Contested Heatmap Active (Hotspots)</span>
+          </div>
+        )}
+
+        {/* Community Solana Template Guide Status Badge */}
+        {showTemplateGuide && (
+          <div className="flex items-center gap-1.5 font-[var(--font-mono)] text-[11px] font-bold text-white bg-gradient-to-r from-purple-600 to-emerald-500 px-3 py-1 rounded-full shadow-sm animate-fade-in">
+            <Sparkles className="w-3.5 h-3.5 animate-pulse text-emerald-200" />
+            <span>Solana Template Overlay Active</span>
           </div>
         )}
       </div>

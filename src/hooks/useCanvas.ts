@@ -28,6 +28,18 @@ function getLinePixels(x0: number, y0: number, x1: number, y1: number): Array<{ 
   return points;
 }
 
+const SOLANA_TEMPLATE: Array<{ x: number; y: number; color: string }> = [
+  // Top bar
+  { x: 58, y: 56, color: '#14F195' }, { x: 59, y: 56, color: '#14F195' }, { x: 60, y: 56, color: '#14F195' }, { x: 61, y: 56, color: '#14F195' }, { x: 62, y: 56, color: '#14F195' }, { x: 63, y: 56, color: '#14F195' }, { x: 64, y: 56, color: '#14F195' }, { x: 65, y: 56, color: '#14F195' }, { x: 66, y: 56, color: '#14F195' }, { x: 67, y: 56, color: '#14F195' },
+  { x: 59, y: 57, color: '#14F195' }, { x: 60, y: 57, color: '#14F195' }, { x: 61, y: 57, color: '#14F195' }, { x: 62, y: 57, color: '#14F195' }, { x: 63, y: 57, color: '#14F195' }, { x: 64, y: 57, color: '#14F195' }, { x: 65, y: 57, color: '#14F195' }, { x: 66, y: 57, color: '#14F195' }, { x: 67, y: 57, color: '#14F195' }, { x: 68, y: 57, color: '#14F195' },
+  // Middle bar
+  { x: 67, y: 63, color: '#9945FF' }, { x: 66, y: 63, color: '#9945FF' }, { x: 65, y: 63, color: '#9945FF' }, { x: 64, y: 63, color: '#9945FF' }, { x: 63, y: 63, color: '#9945FF' }, { x: 62, y: 63, color: '#9945FF' }, { x: 61, y: 63, color: '#9945FF' }, { x: 60, y: 63, color: '#9945FF' }, { x: 59, y: 63, color: '#9945FF' }, { x: 58, y: 63, color: '#9945FF' },
+  { x: 66, y: 64, color: '#9945FF' }, { x: 65, y: 64, color: '#9945FF' }, { x: 64, y: 64, color: '#9945FF' }, { x: 63, y: 64, color: '#9945FF' }, { x: 62, y: 64, color: '#9945FF' }, { x: 61, y: 64, color: '#9945FF' }, { x: 60, y: 64, color: '#9945FF' }, { x: 59, y: 64, color: '#9945FF' }, { x: 58, y: 64, color: '#9945FF' }, { x: 57, y: 64, color: '#9945FF' },
+  // Bottom bar
+  { x: 58, y: 70, color: '#14F195' }, { x: 59, y: 70, color: '#14F195' }, { x: 60, y: 70, color: '#14F195' }, { x: 61, y: 70, color: '#14F195' }, { x: 62, y: 70, color: '#14F195' }, { x: 63, y: 70, color: '#14F195' }, { x: 64, y: 70, color: '#14F195' }, { x: 65, y: 70, color: '#14F195' }, { x: 66, y: 70, color: '#14F195' }, { x: 67, y: 70, color: '#14F195' },
+  { x: 59, y: 71, color: '#14F195' }, { x: 60, y: 71, color: '#14F195' }, { x: 61, y: 71, color: '#14F195' }, { x: 62, y: 71, color: '#14F195' }, { x: 63, y: 71, color: '#14F195' }, { x: 64, y: 71, color: '#14F195' }, { x: 65, y: 71, color: '#14F195' }, { x: 66, y: 71, color: '#14F195' }, { x: 67, y: 71, color: '#14F195' }, { x: 68, y: 71, color: '#14F195' },
+];
+
 interface UseCanvasProps {
   width: number;
   height: number;
@@ -38,6 +50,9 @@ interface UseCanvasProps {
   initialPixels?: Pixel[];
   onCursorMove?: (x: number, y: number, isDrawing: boolean) => void;
   showHeatmap?: boolean;
+  showTemplateGuide?: boolean;
+  canDraw?: boolean;
+  userAddress?: string | null;
 }
 
 export function useCanvas({
@@ -50,6 +65,9 @@ export function useCanvas({
   initialPixels = [],
   onCursorMove,
   showHeatmap = false,
+  showTemplateGuide = false,
+  canDraw = true,
+  userAddress = null,
 }: UseCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -58,8 +76,8 @@ export function useCanvas({
   const [pixelsVersion, setPixelsVersion] = useState<number>(0);
 
   // Viewport transformation: zoom and pan
-  const [scale, setScale] = useState<number>(6); // initial zoom factor
-  const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 40, y: 40 });
+  const [scale, setScale] = useState<number>(3.8); // initial comfortable scale
+  const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 260, y: 120 });
   const [hoveredPixel, setHoveredPixel] = useState<{ x: number; y: number; pixel?: Pixel } | null>(null);
 
   const isPanningRef = useRef(false);
@@ -87,11 +105,11 @@ export function useCanvas({
       animFrameRef.current = null;
       renderCanvas();
     });
-  }, [scale, offset, hoveredPixel, showHeatmap]);
+  }, [scale, offset, hoveredPixel, showHeatmap, showTemplateGuide]);
 
   useEffect(() => {
     requestRender();
-  }, [showHeatmap, requestRender]);
+  }, [showHeatmap, showTemplateGuide, requestRender]);
 
   const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -127,6 +145,17 @@ export function useCanvas({
     ctx.strokeStyle = 'rgba(37, 99, 235, 0.4)';
     ctx.lineWidth = 1 / scale;
     ctx.strokeRect(0, 0, width, height);
+
+    // Draw community Solana template guide if enabled
+    if (showTemplateGuide) {
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      SOLANA_TEMPLATE.forEach((t) => {
+        ctx.fillStyle = t.color;
+        ctx.fillRect(t.x, t.y, 1, 1);
+      });
+      ctx.restore();
+    }
 
     // Draw placed pixels (with optional battle heatmap overlay)
     pixelsRef.current.forEach((pixel) => {
@@ -223,7 +252,7 @@ export function useCanvas({
                 x: bx,
                 y: by,
                 color: selectedColor,
-                author: 'Me',
+                author: userAddress || 'Me',
                 timestamp: Date.now(),
                 isERConfirmed: true,
                 heat: (existing?.heat || 0) + 1,
@@ -240,7 +269,7 @@ export function useCanvas({
           x: gridX,
           y: gridY,
           color: selectedColor,
-          author: 'Me',
+          author: userAddress || 'Me',
           timestamp: Date.now(),
           isERConfirmed: true,
           heat: (existing?.heat || 0) + 1,
@@ -249,7 +278,7 @@ export function useCanvas({
         onPixelPlaced(gridX, gridY, selectedColor);
       }
     },
-    [toolMode, selectedColor, width, height, onPixelPlaced]
+    [toolMode, selectedColor, width, height, userAddress, onPixelPlaced]
   );
 
   // Smooth continuous line drawing using Bresenham algorithm
@@ -297,9 +326,43 @@ export function useCanvas({
     });
   }, []);
 
+  // Multi-touch tracking for mobile pinch-to-zoom
+  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStartDistRef = useRef<number | null>(null);
+  const pinchStartScaleRef = useRef<number>(6);
+  const pinchStartOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const pinchCenterRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
   // Pointer Down
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
+      // Capture pointer for consistent drag tracking
+      try {
+        (e.target as HTMLElement)?.setPointerCapture?.(e.pointerId);
+      } catch (err) {
+        // Ignored if capture unsupported
+      }
+
+      activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      // Multi-touch detection (2 fingers = pinch zoom)
+      if (activePointersRef.current.size === 2) {
+        const pts = Array.from(activePointersRef.current.values());
+        const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        pinchStartDistRef.current = dist;
+        pinchStartScaleRef.current = scale;
+        pinchStartOffsetRef.current = { ...offset };
+        pinchCenterRef.current = {
+          x: (pts[0].x + pts[1].x) / 2,
+          y: (pts[0].y + pts[1].y) / 2,
+        };
+        // Cancel active drawing when second finger touches
+        isDrawingRef.current = false;
+        lastPlacedRef.current = null;
+        isPanningRef.current = false;
+        return;
+      }
+
       if (e.button === 1 || e.shiftKey || e.altKey) {
         isPanningRef.current = true;
         panStartRef.current = { x: e.clientX - offset.x, y: e.clientY - offset.y };
@@ -325,6 +388,11 @@ export function useCanvas({
             return;
           }
 
+          if (!canDraw) {
+            onPixelPlaced(grid.x, grid.y, selectedColor);
+            return;
+          }
+
           isDrawingRef.current = true;
           lastPlacedRef.current = { x: grid.x, y: grid.y };
           applySinglePixel(grid.x, grid.y);
@@ -336,12 +404,37 @@ export function useCanvas({
         }
       }
     },
-    [offset, screenToGrid, toolMode, applySinglePixel, onPixelPlaced, onInspectPixel, requestRender]
+    [offset, scale, screenToGrid, toolMode, canDraw, applySinglePixel, onPixelPlaced, onInspectPixel, requestRender]
   );
 
   // Pointer Move
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
+      activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      // Handle 2-finger pinch-to-zoom on touch screens
+      if (activePointersRef.current.size === 2 && pinchStartDistRef.current) {
+        const pts = Array.from(activePointersRef.current.values());
+        const currentDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        const canvas = canvasRef.current;
+        if (!canvas || pinchStartDistRef.current <= 0) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const factor = currentDist / pinchStartDistRef.current;
+        const newScale = Math.min(Math.max(pinchStartScaleRef.current * factor, 1.5), 48);
+
+        const centerCanvasX = pinchCenterRef.current.x - rect.left;
+        const centerCanvasY = pinchCenterRef.current.y - rect.top;
+
+        setScale(newScale);
+        setOffset({
+          x: centerCanvasX - (centerCanvasX - pinchStartOffsetRef.current.x) * (newScale / pinchStartScaleRef.current),
+          y: centerCanvasY - (centerCanvasY - pinchStartOffsetRef.current.y) * (newScale / pinchStartScaleRef.current),
+        });
+        requestRender();
+        return;
+      }
+
       if (isPanningRef.current) {
         setOffset({
           x: e.clientX - panStartRef.current.x,
@@ -366,11 +459,26 @@ export function useCanvas({
         setHoveredPixel(null);
       }
     },
-    [screenToGrid, drawLineTo, onCursorMove]
+    [screenToGrid, drawLineTo, onCursorMove, requestRender]
   );
 
   // Pointer Up / Leave
-  const handlePointerUp = useCallback(() => {
+  const handlePointerUp = useCallback((e?: React.PointerEvent) => {
+    if (e) {
+      activePointersRef.current.delete(e.pointerId);
+      try {
+        (e.target as HTMLElement)?.releasePointerCapture?.(e.pointerId);
+      } catch (err) {
+        // Ignored
+      }
+    } else {
+      activePointersRef.current.clear();
+    }
+
+    if (activePointersRef.current.size < 2) {
+      pinchStartDistRef.current = null;
+    }
+
     isPanningRef.current = false;
     if (isDrawingRef.current) {
       isDrawingRef.current = false;
@@ -394,6 +502,23 @@ export function useCanvas({
     [requestRender]
   );
 
+  // External batch update (from server initial state)
+  const setMultipleRemotePixels = useCallback(
+    (pixels: Pixel[]) => {
+      if (!pixels || pixels.length === 0) return;
+      pixels.forEach((p) => {
+        const existing = pixelsRef.current.get(`${p.x},${p.y}`);
+        pixelsRef.current.set(`${p.x},${p.y}`, {
+          ...p,
+          heat: (existing?.heat || 0) + 1,
+        });
+      });
+      setPixelsVersion((v) => v + 1);
+      requestRender();
+    },
+    [requestRender]
+  );
+
   // Attach wheel listener
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -405,21 +530,50 @@ export function useCanvas({
     };
   }, [handleWheel]);
 
-  // Center canvas on first mount
+  // Center canvas with smart UI clearance (accounts for right sidebar, HUD, and toolbar)
   const centerCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const initialScale = Math.min(rect.width / (width * 1.4), rect.height / (height * 1.4), 8);
-    setScale(initialScale);
+    if (rect.width === 0 || rect.height === 0) return;
+
+    // Desktop clearance: Right sidebar takes ~320px
+    const isDesktop = rect.width >= 1024;
+    const rightMargin = isDesktop ? 320 : 20;
+    const leftMargin = isDesktop ? 80 : 20;
+
+    const availableWidth = rect.width - rightMargin - leftMargin;
+    const availableHeight = rect.height - 180; // clearance for top HUD + bottom toolbar
+
+    // Calculate optimal scale so 128x128 fits cleanly without overlapping surrounding controls
+    const scaleX = availableWidth / width;
+    const scaleY = availableHeight / height;
+    const targetScale = Math.min(Math.max(Math.min(scaleX, scaleY), 2.2), 4.4);
+
+    setScale(targetScale);
+
+    // Calculate center point in the open workspace
+    const centerX = leftMargin + availableWidth / 2;
+    const centerY = (rect.height - 10) / 2;
+
     setOffset({
-      x: (rect.width - width * initialScale) / 2,
-      y: (rect.height - height * initialScale) / 2,
+      x: Math.round(centerX - (width * targetScale) / 2),
+      y: Math.round(centerY - (height * targetScale) / 2),
     });
   }, [width, height]);
 
+  // Auto-center on mount and upon container resize
   useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const observer = new ResizeObserver(() => {
+      centerCanvas();
+    });
+    observer.observe(canvas);
     centerCanvas();
+
+    return () => observer.disconnect();
   }, [centerCanvas]);
 
   // Reactively computed list of all placed pixels
@@ -427,6 +581,12 @@ export function useCanvas({
     () => Array.from(pixelsRef.current.values()),
     [pixelsVersion]
   );
+
+  const clearCanvas = useCallback(() => {
+    pixelsRef.current.clear();
+    setPixelsVersion((v) => v + 1);
+    requestRender();
+  }, [requestRender]);
 
   return {
     canvasRef,
@@ -441,8 +601,10 @@ export function useCanvas({
     handlePointerMove,
     handlePointerUp,
     centerCanvas,
+    clearCanvas,
     setScale,
     setRemotePixel,
+    setMultipleRemotePixels,
     requestRender,
   };
 }

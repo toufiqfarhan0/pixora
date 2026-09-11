@@ -25,22 +25,30 @@ export const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'canvas' | 'how-it-works'>('landing');
 
   // Official Privy Web3 Authentication
-  const { ready, authenticated, user, login, logout } = usePrivy();
+  const { ready, authenticated, user, login, logout, connectWallet } = usePrivy();
 
-  // Dynamic user address from connected wallet (strictly real, never hardcoded)
-  const userAddress = authenticated ? (user?.wallet?.address ?? null) : null;
+  // Dynamic user address from connected or embedded wallet (strictly real, never hardcoded)
+  const userAddress = useMemo(() => {
+    if (!authenticated || !user) return null;
+    if (user.wallet?.address) return user.wallet.address;
+    const walletAccount = user.linkedAccounts?.find(
+      (acc): acc is any => acc.type === 'wallet' && Boolean((acc as any).address)
+    );
+    return walletAccount ? (walletAccount as any).address : user.id;
+  }, [authenticated, user]);
 
-  const loginMethod = authenticated
-    ? (user?.wallet?.walletClientType === 'metamask'
-        ? 'MetaMask'
-        : user?.wallet?.walletClientType === 'phantom'
-        ? 'Phantom'
-        : user?.wallet?.walletClientType === 'solflare'
-        ? 'Solflare'
-        : user?.wallet?.chainType === 'solana'
-        ? 'Solana'
-        : 'Wallet Verified')
-    : null;
+  const loginMethod = useMemo(() => {
+    if (!authenticated || !user) return null;
+    if (user.wallet?.walletClientType === 'phantom') return 'Phantom';
+    if (user.wallet?.walletClientType === 'solflare') return 'Solflare';
+    if (user.wallet?.walletClientType === 'backpack') return 'Backpack';
+    if (user.wallet?.walletClientType === 'metamask') return 'MetaMask';
+    if (user.wallet?.chainType === 'solana') return 'Solana';
+    if (user.email?.address) return 'Email';
+    if (user.google?.email) return 'Google';
+    if (user.twitter?.username) return 'Twitter';
+    return 'Wallet Verified';
+  }, [authenticated, user]);
 
   const authMode: AuthMode = 'live';
 
@@ -49,6 +57,7 @@ export const App: React.FC = () => {
   const [toolMode, setToolMode] = useState<ToolMode>('pen');
   const [isCommitModalOpen, setIsCommitModalOpen] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
+  const [showTemplateGuide, setShowTemplateGuide] = useState(false);
 
   // Clean empty starter canvas ready for real painters
   const initialPixels = useMemo<Pixel[]>(() => [], []);
@@ -59,6 +68,7 @@ export const App: React.FC = () => {
     activities,
     streamPixel,
     recordRemotePixel,
+    initRemotePixels,
     commitToSolanaL1,
     isCommitting,
     lastCommitResult,
@@ -83,15 +93,24 @@ export const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, [energy, maxEnergy]);
 
-  // Real-time peer cursors & multiplayer sync across tabs and windows
-  const { remotePeers, broadcastCursor, broadcastPixel, peerCount } = useRealtimeMultiplayer({
+  // Forward ref for setMultipleRemotePixels to avoid circular dependency
+  const setMultipleRemotePixelsRef = useRef<((pixels: Pixel[]) => void) | null>(null);
+
+  // Real-time peer cursors & multiplayer sync across tabs, windows, and browsers (Firefox <-> Comet/Chrome)
+  const { remotePeers, broadcastCursor, broadcastPixel, broadcastBatch, peerCount } = useRealtimeMultiplayer({
     userAddress,
     selectedColor,
     onRemotePaint: (pixel) => {
-      setRemotePixel(pixel);
+      setRemotePixelRef.current?.(pixel);
       recordRemotePixel(pixel);
     },
+    onInitCanvas: (pixels) => {
+      setMultipleRemotePixelsRef.current?.(pixels);
+      initRemotePixels(pixels);
+    },
   });
+
+  const setRemotePixelRef = useRef<((pixel: Pixel) => void) | null>(null);
 
   // Local placement callback
   const handlePixelPlaced = useCallback(
@@ -144,6 +163,7 @@ export const App: React.FC = () => {
     centerCanvas,
     setScale,
     setRemotePixel,
+    setMultipleRemotePixels,
   } = useCanvas({
     width: CANVAS_WIDTH,
     height: CANVAS_HEIGHT,
@@ -154,10 +174,35 @@ export const App: React.FC = () => {
     initialPixels,
     onCursorMove: broadcastCursor,
     showHeatmap,
+    showTemplateGuide,
+    canDraw: authenticated,
+    userAddress,
   });
+
+  setRemotePixelRef.current = setRemotePixel;
+  setMultipleRemotePixelsRef.current = setMultipleRemotePixels;
+
+  // Sync initial batch to server once if this browser already had artwork loaded
+  const hasSyncedInitialBatchRef = useRef(false);
+  useEffect(() => {
+    if (!hasSyncedInitialBatchRef.current && allPixels.length > 0 && authenticated) {
+      hasSyncedInitialBatchRef.current = true;
+      broadcastBatch(allPixels);
+    }
+  }, [allPixels.length, authenticated, broadcastBatch]);
 
   const handleZoomIn = () => setScale((s) => Math.min(s * 1.3, 48));
   const handleZoomOut = () => setScale((s) => Math.max(s * 0.7, 1.5));
+
+  // Auto-center canvas when navigating to canvas view
+  useEffect(() => {
+    if (currentView === 'canvas') {
+      const timer = setTimeout(() => {
+        centerCanvas();
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [currentView, centerCanvas]);
 
   // Direct reactive array of all placed canvas pixels
   const allPixelsArray = allPixels;
@@ -186,8 +231,18 @@ export const App: React.FC = () => {
   };
 
   const handleOpenWalletModal = useCallback(() => {
-    if (ready) login();
-  }, [ready, login]);
+    if (!ready) {
+      setWelcomeToast('⏳ Initializing Privy Web3 Auth, please wait a moment...');
+      setTimeout(() => setWelcomeToast(null), 2500);
+      return;
+    }
+    try {
+      login();
+    } catch (err) {
+      console.warn('Privy login failed, falling back to connectWallet:', err);
+      connectWallet();
+    }
+  }, [ready, login, connectWallet]);
 
   const handleDisconnect = useCallback(() => {
     logout();
@@ -259,6 +314,7 @@ export const App: React.FC = () => {
                 remoteCursors={remotePeers}
                 hoveredPixel={hoveredPixel}
                 showHeatmap={showHeatmap}
+                showTemplateGuide={showTemplateGuide}
               />
             </main>
 
@@ -274,6 +330,8 @@ export const App: React.FC = () => {
               onExportPNG={handleExportPNG}
               showHeatmap={showHeatmap}
               onToggleHeatmap={() => setShowHeatmap((prev) => !prev)}
+              showTemplateGuide={showTemplateGuide}
+              onToggleTemplateGuide={() => setShowTemplateGuide((prev) => !prev)}
               energy={energy}
               maxEnergy={maxEnergy}
               isRecharging={isRecharging}
@@ -282,13 +340,14 @@ export const App: React.FC = () => {
             {/* Bottom-left Telemetry HUD */}
             <TelemetryHUD telemetry={telemetry} hoveredPixel={hoveredPixel} loginMethod={loginMethod} />
 
-            {/* Top-right Activity Stream Sidebar */}
+            {/* Top-right Activity Stream & Leaderboard Sidebar */}
             <ActivitySidebar
               activities={activities}
               totalPixels={allPixelsArray.length}
               userAddress={userAddress}
               authMode={authMode}
               loginMethod={loginMethod}
+              pixels={allPixelsArray}
             />
           </div>
         )}

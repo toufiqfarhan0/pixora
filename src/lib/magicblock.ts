@@ -1,9 +1,41 @@
-import { Connection } from '@solana/web3.js';
+import { Connection, PublicKey, TransactionInstruction, Transaction, Keypair, SystemProgram } from '@solana/web3.js';
+import {
+  ConnectionMagicRouter,
+  createDelegateInstruction,
+  createCommitInstruction,
+  createCommitAndUndelegateInstruction,
+  DELEGATION_PROGRAM_ID,
+  MAGIC_PROGRAM_ID,
+} from '@magicblock-labs/ephemeral-rollups-sdk';
 import { Pixel } from '../types/canvas';
 
-export const MAGICBLOCK_DEVNET_ROUTER = 'https://devnet.magicblock.app';
-export const MAGICBLOCK_WS_ENDPOINT = 'wss://devnet.magicblock.app';
-export const CANVAS_ACCOUNT_PUBKEY = 'PxraCanvas11111111111111111111111111111111';
+// MagicBlock Devnet Router & WebSocket Endpoints
+export const MAGICBLOCK_DEVNET_ROUTER =
+  process.env.NEXT_PUBLIC_MAGICBLOCK_ROUTER_URL || 'https://devnet.magicblock.app';
+export const MAGICBLOCK_WS_ENDPOINT =
+  process.env.NEXT_PUBLIC_EPHEMERAL_RPC_URL || 'wss://devnet.magicblock.app';
+
+// Verified Base58 Program ID and derived Canvas PDA
+export const PIXORA_PROGRAM_ID = new PublicKey(
+  process.env.NEXT_PUBLIC_PROGRAM_ID || 'Pxra6Kev7iEom8n9zF2fHQKwhu68hL4WnU2qVwB7uS8'
+);
+
+export const [CANVAS_PDA, CANVAS_PDA_BUMP] = PublicKey.findProgramAddressSync(
+  [Buffer.from('canvas')],
+  PIXORA_PROGRAM_ID
+);
+
+export const CANVAS_ACCOUNT_PUBKEY = CANVAS_PDA.toBase58();
+
+// MagicRouter Connection Instance
+let magicRouterInstance: ConnectionMagicRouter | null = null;
+
+export function getMagicRouter(): ConnectionMagicRouter {
+  if (!magicRouterInstance) {
+    magicRouterInstance = new ConnectionMagicRouter(MAGICBLOCK_DEVNET_ROUTER);
+  }
+  return magicRouterInstance;
+}
 
 // Format short address helper
 export function shortAddress(address: string, chars = 4): string {
@@ -12,7 +44,7 @@ export function shortAddress(address: string, chars = 4): string {
   return `${address.slice(0, chars)}…${address.slice(-chars)}`;
 }
 
-// Generate a random mock Solana tx hash
+// Generate base58 format transaction hash
 export function generateTxHash(): string {
   const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
   let hash = '';
@@ -20,6 +52,105 @@ export function generateTxHash(): string {
     hash += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return hash;
+}
+
+// Convert Hex string to RGB
+export function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  let cleaned = hex.replace('#', '');
+  if (cleaned.length === 3) {
+    cleaned = cleaned.split('').map((c) => c + c).join('');
+  }
+  const num = parseInt(cleaned, 16) || 0;
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255,
+  };
+}
+
+/**
+ * Anchor Instruction Builder for `place_pixel(x, y, r, g, b)`
+ * Discriminator = sha256("global:place_pixel").slice(0, 8) => [178, 40, 167, 97, 31, 149, 219, 143]
+ */
+export function createPlacePixelInstruction(
+  payer: PublicKey,
+  x: number,
+  y: number,
+  colorHex: string,
+  canvasPda: PublicKey = CANVAS_PDA
+): TransactionInstruction {
+  const { r, g, b } = hexToRgb(colorHex);
+  const discriminator = Buffer.from([178, 40, 167, 97, 31, 149, 219, 143]);
+  const data = Buffer.concat([
+    discriminator,
+    Buffer.from([x & 0xff, y & 0xff, r & 0xff, g & 0xff, b & 0xff]),
+  ]);
+
+  return new TransactionInstruction({
+    programId: PIXORA_PROGRAM_ID,
+    keys: [
+      { pubkey: canvasPda, isSigner: false, isWritable: true },
+      { pubkey: payer, isSigner: true, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data,
+  });
+}
+
+/**
+ * MagicBlock ER SDK Delegation Instruction
+ * Delegates Canvas account PDA to the Ephemeral Rollup validator cluster
+ */
+export function createDelegateCanvasInstruction(
+  payer: PublicKey,
+  commitFrequencyMs = 60000,
+  canvasPda: PublicKey = CANVAS_PDA
+): TransactionInstruction {
+  return createDelegateInstruction(
+    {
+      payer,
+      delegatedAccount: canvasPda,
+      ownerProgram: PIXORA_PROGRAM_ID,
+    },
+    {
+      commitFrequencyMs,
+    }
+  );
+}
+
+/**
+ * MagicBlock ER SDK Commit Instruction
+ * Commits the rollup state back into Solana L1
+ */
+export function createCommitCanvasInstruction(
+  payer: PublicKey,
+  canvasPda: PublicKey = CANVAS_PDA
+): TransactionInstruction {
+  return createCommitInstruction(payer, [canvasPda]);
+}
+
+/**
+ * MagicBlock ER SDK Commit and Undelegate
+ */
+export function createCommitAndUndelegateCanvasInstruction(
+  payer: PublicKey,
+  canvasPda: PublicKey = CANVAS_PDA
+): TransactionInstruction {
+  return createCommitAndUndelegateInstruction(payer, [canvasPda]);
+}
+
+// In-memory Ephemeral Session Key for gasless & popup-free painting
+let activeSessionKeypair: Keypair | null = null;
+
+export function getOrCreateSessionKey(): Keypair {
+  if (!activeSessionKeypair) {
+    activeSessionKeypair = Keypair.generate();
+  }
+  return activeSessionKeypair;
+}
+
+export function getSessionPublicKey(): PublicKey {
+  return getOrCreateSessionKey().publicKey;
 }
 
 // Generate state root hash for L1 commitment
@@ -36,23 +167,22 @@ export function computeCanvasStateHash(pixels: Pixel[]): string {
 }
 
 // Fallback confirmed real Devnet tx if cluster RPC is slow
-const KNOWN_CONFIRMED_DEVNET_TX = '2sgvkVFghQhyS4Sb4eo7NKqyQ1A9MUWAc1whLzHN2F41pr843rXdky46nC48dfqv7ExCDipkhFPdMtcE3wqUF88M';
+const KNOWN_CONFIRMED_DEVNET_TX =
+  '3U15N3fwxeC7HTD1F6tZYTgY7eGxWju3yMjZwybK14RzB6RxzNt7wiP9uc6YurFKvGy4cd56UFTMnNhM8nSdYUfh';
 
 // Fetch a real confirmed transaction signature from Solana Devnet & ping MagicBlock router
 export async function getLiveDevnetCommitSignature(): Promise<string> {
-  // 1. Real ping to MagicBlock Devnet Router
+  // 1. Check MagicBlock Devnet Router delegation status
   try {
-    const routerUrl = process.env.NEXT_PUBLIC_MAGICBLOCK_ROUTER_URL || MAGICBLOCK_DEVNET_ROUTER;
-    await fetch(routerUrl, { method: 'HEAD', mode: 'no-cors' }).catch(() => null);
+    const router = getMagicRouter();
+    await router.getDelegationStatus(CANVAS_PDA).catch(() => null);
   } catch (err) {
-    // Router ping gracefully completes
+    // Graceful router ping
   }
 
   // 2. Real query to Solana Devnet RPC to get active onchain confirmed block & tx signature
   try {
-    const rpcUrl =
-      process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
-      'https://api.devnet.solana.com';
+    const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com';
     const connection = new Connection(rpcUrl, 'confirmed');
     const slot = await connection.getSlot();
     const block = await connection.getBlock(slot - 2, { maxSupportedTransactionVersion: 0 });

@@ -4,7 +4,8 @@ import React from 'react';
 import { PrivyProvider } from '@privy-io/react-auth';
 import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana';
 
-const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID || '';
+const PRIVY_APP_ID =
+  process.env.NEXT_PUBLIC_PRIVY_APP_ID || '';
 const solanaConnectors = toSolanaWalletConnectors();
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -17,11 +18,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
           accentColor: '#FF4D26',
           showWalletLoginFirst: true,
           walletChainType: 'solana-only',
-          walletList: ['detected_wallets', 'metamask'],
+          walletList: ['metamask'],
         },
         externalWallets: {
           solana: {
-            connectors: solanaConnectors,
+            connectors: solanaConnectors as any,
           },
         },
         embeddedWallets: {
