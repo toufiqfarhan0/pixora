@@ -4,7 +4,7 @@ import React from 'react';
 import { ToolMode, Pixel } from '../types/canvas';
 import { MultiplayerCursors } from './MultiplayerCursors';
 import { RemoteCursor } from '../hooks/useRealtimeMultiplayer';
-import { Flame, Sparkles } from 'lucide-react';
+import { Flame, Zap, Search, Users } from 'lucide-react';
 import { shortAddress } from '../lib/magicblock';
 
 interface CanvasViewportProps {
@@ -20,7 +20,6 @@ interface CanvasViewportProps {
   remoteCursors?: RemoteCursor[];
   hoveredPixel?: { x: number; y: number; pixel?: Pixel } | null;
   showHeatmap?: boolean;
-  showTemplateGuide?: boolean;
 }
 
 export const CanvasViewport: React.FC<CanvasViewportProps> = ({
@@ -36,7 +35,6 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
   remoteCursors = [],
   hoveredPixel = null,
   showHeatmap = false,
-  showTemplateGuide = false,
 }) => {
   const getCursorStyle = () => {
     switch (toolMode) {
@@ -46,7 +44,6 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
         return 'cursor-crosshair';
       case 'eraser':
         return 'cursor-cell';
-      case 'brush':
       case 'pen':
       default:
         return 'cursor-crosshair';
@@ -64,31 +61,37 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
     >
       <canvas ref={canvasRef} className="pixel-canvas absolute inset-0 w-full h-full touch-none select-none" />
 
-      {/* Real Live Multiplayer Cursors Overlay (zero hardcoding, only real connected users) */}
+      {/* Real Live Multiplayer Cursors Overlay */}
       <MultiplayerCursors
         cursors={remoteCursors}
         scale={scale}
         offset={offset}
       />
 
-      {/* Top Left Viewport HUD & Heatmap Badge */}
-      <div className="absolute top-16 left-4 pointer-events-none z-10 flex flex-col items-start gap-2">
+      {/* Top Left Viewport Status & Control Hints */}
+      <div className="absolute top-4 left-4 pointer-events-none z-10 flex flex-col items-start gap-2">
         <div className="flex items-center gap-2 font-[var(--font-mono)] text-[11px] text-zinc-600 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-zinc-200/80 shadow-subtle">
-          <span className="font-semibold text-brand-600">
-            {toolMode === 'inspect'
-              ? '🔍 Click any pixel to inspect onchain author & tx'
-              : '⚡ Click & Drag to Paint (10ms)'}
-          </span>
+          <div className="flex items-center gap-1.5 font-semibold text-brand-600">
+            {toolMode === 'inspect' ? (
+              <>
+                <Search className="w-3.5 h-3.5 text-brand-600" />
+                <span>Click pixel to inspect onchain author</span>
+              </>
+            ) : (
+              <>
+                <Zap className="w-3.5 h-3.5 text-brand-600" />
+                <span>Click & Drag to Paint (10ms)</span>
+              </>
+            )}
+          </div>
           <span className="text-zinc-300">·</span>
-          <span>Middle-Click / Shift+Drag to Pan</span>
+          <span suppressHydrationWarning>Zoom: {Math.round(scale * 10) / 10}x</span>
           <span className="text-zinc-300">·</span>
-          <span>Zoom: {Math.round(scale * 10) / 10}x</span>
-          <span className="text-zinc-300">·</span>
-          <span className="flex items-center gap-1 text-[#FF4D26] font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FF4D26] animate-pulse" />
+          <span suppressHydrationWarning className="flex items-center gap-1.5 text-[#FF4D26] font-semibold">
+            <Users className="w-3 h-3 text-[#FF4D26]" />
             {remoteCursors.length > 0
-              ? `${remoteCursors.length + 1} Artists Active`
-              : 'Multiplayer Ready'}
+              ? `${remoteCursors.length + 1} Online`
+              : 'Multiplayer Active'}
           </span>
         </div>
 
@@ -96,22 +99,14 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
         {showHeatmap && (
           <div className="flex items-center gap-1.5 font-[var(--font-mono)] text-[11px] font-bold text-white bg-gradient-to-r from-amber-500 to-[#FF4D26] px-3 py-1 rounded-full shadow-sm animate-fade-in">
             <Flame className="w-3.5 h-3.5 animate-pulse text-yellow-200" />
-            <span>Contested Heatmap Active (Hotspots)</span>
-          </div>
-        )}
-
-        {/* Community Solana Template Guide Status Badge */}
-        {showTemplateGuide && (
-          <div className="flex items-center gap-1.5 font-[var(--font-mono)] text-[11px] font-bold text-white bg-gradient-to-r from-purple-600 to-emerald-500 px-3 py-1 rounded-full shadow-sm animate-fade-in">
-            <Sparkles className="w-3.5 h-3.5 animate-pulse text-emerald-200" />
-            <span>Solana Template Overlay Active</span>
+            <span>Contested Heatmap Active</span>
           </div>
         )}
       </div>
 
       {/* Live Cursor Coordinate Pill */}
       {hoveredPixel && hoveredPixel.x >= 0 && hoveredPixel.x < width && hoveredPixel.y >= 0 && hoveredPixel.y < height && (
-        <div className="absolute top-16 right-80 pointer-events-none z-10 hidden md:flex items-center gap-2 font-[var(--font-mono)] text-[11px] text-zinc-700 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-200/90 shadow-subtle animate-fade-in">
+        <div className="absolute top-4 right-80 pointer-events-none z-10 hidden md:flex items-center gap-2 font-[var(--font-mono)] text-[11px] text-zinc-700 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-200/90 shadow-subtle animate-fade-in">
           <span className="font-bold text-[#FF4D26]">
             ({hoveredPixel.x}, {hoveredPixel.y})
           </span>

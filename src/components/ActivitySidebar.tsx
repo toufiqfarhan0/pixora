@@ -264,13 +264,13 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       {/* Rank indicator */}
-                      <span className="w-5 text-center font-bold text-xs shrink-0">
+                      <span className="w-5 text-center font-bold text-xs shrink-0 font-mono">
                         {isTop1 ? (
-                          '🥇'
+                          <span className="text-amber-500 font-black">#1</span>
                         ) : isTop2 ? (
-                          '🥈'
+                          <span className="text-slate-500 font-black">#2</span>
                         ) : isTop3 ? (
-                          '🥉'
+                          <span className="text-amber-700 font-black">#3</span>
                         ) : (
                           <span className="text-zinc-400 font-mono text-[11px]">#{index + 1}</span>
                         )}

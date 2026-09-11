@@ -28,29 +28,18 @@ function getLinePixels(x0: number, y0: number, x1: number, y1: number): Array<{ 
   return points;
 }
 
-const SOLANA_TEMPLATE: Array<{ x: number; y: number; color: string }> = [
-  // Top bar
-  { x: 58, y: 56, color: '#14F195' }, { x: 59, y: 56, color: '#14F195' }, { x: 60, y: 56, color: '#14F195' }, { x: 61, y: 56, color: '#14F195' }, { x: 62, y: 56, color: '#14F195' }, { x: 63, y: 56, color: '#14F195' }, { x: 64, y: 56, color: '#14F195' }, { x: 65, y: 56, color: '#14F195' }, { x: 66, y: 56, color: '#14F195' }, { x: 67, y: 56, color: '#14F195' },
-  { x: 59, y: 57, color: '#14F195' }, { x: 60, y: 57, color: '#14F195' }, { x: 61, y: 57, color: '#14F195' }, { x: 62, y: 57, color: '#14F195' }, { x: 63, y: 57, color: '#14F195' }, { x: 64, y: 57, color: '#14F195' }, { x: 65, y: 57, color: '#14F195' }, { x: 66, y: 57, color: '#14F195' }, { x: 67, y: 57, color: '#14F195' }, { x: 68, y: 57, color: '#14F195' },
-  // Middle bar
-  { x: 67, y: 63, color: '#9945FF' }, { x: 66, y: 63, color: '#9945FF' }, { x: 65, y: 63, color: '#9945FF' }, { x: 64, y: 63, color: '#9945FF' }, { x: 63, y: 63, color: '#9945FF' }, { x: 62, y: 63, color: '#9945FF' }, { x: 61, y: 63, color: '#9945FF' }, { x: 60, y: 63, color: '#9945FF' }, { x: 59, y: 63, color: '#9945FF' }, { x: 58, y: 63, color: '#9945FF' },
-  { x: 66, y: 64, color: '#9945FF' }, { x: 65, y: 64, color: '#9945FF' }, { x: 64, y: 64, color: '#9945FF' }, { x: 63, y: 64, color: '#9945FF' }, { x: 62, y: 64, color: '#9945FF' }, { x: 61, y: 64, color: '#9945FF' }, { x: 60, y: 64, color: '#9945FF' }, { x: 59, y: 64, color: '#9945FF' }, { x: 58, y: 64, color: '#9945FF' }, { x: 57, y: 64, color: '#9945FF' },
-  // Bottom bar
-  { x: 58, y: 70, color: '#14F195' }, { x: 59, y: 70, color: '#14F195' }, { x: 60, y: 70, color: '#14F195' }, { x: 61, y: 70, color: '#14F195' }, { x: 62, y: 70, color: '#14F195' }, { x: 63, y: 70, color: '#14F195' }, { x: 64, y: 70, color: '#14F195' }, { x: 65, y: 70, color: '#14F195' }, { x: 66, y: 70, color: '#14F195' }, { x: 67, y: 70, color: '#14F195' },
-  { x: 59, y: 71, color: '#14F195' }, { x: 60, y: 71, color: '#14F195' }, { x: 61, y: 71, color: '#14F195' }, { x: 62, y: 71, color: '#14F195' }, { x: 63, y: 71, color: '#14F195' }, { x: 64, y: 71, color: '#14F195' }, { x: 65, y: 71, color: '#14F195' }, { x: 66, y: 71, color: '#14F195' }, { x: 67, y: 71, color: '#14F195' }, { x: 68, y: 71, color: '#14F195' },
-];
-
 interface UseCanvasProps {
   width: number;
   height: number;
   selectedColor: string;
+  onSelectColor?: (color: string) => void;
   toolMode: ToolMode;
+  onSelectTool?: (mode: ToolMode) => void;
   onPixelPlaced: (x: number, y: number, color: string) => void;
   onInspectPixel?: (x: number, y: number, pixel: Pixel | null) => void;
   initialPixels?: Pixel[];
   onCursorMove?: (x: number, y: number, isDrawing: boolean) => void;
   showHeatmap?: boolean;
-  showTemplateGuide?: boolean;
   canDraw?: boolean;
   userAddress?: string | null;
 }
@@ -59,13 +48,14 @@ export function useCanvas({
   width,
   height,
   selectedColor,
+  onSelectColor,
   toolMode,
+  onSelectTool,
   onPixelPlaced,
   onInspectPixel,
   initialPixels = [],
   onCursorMove,
   showHeatmap = false,
-  showTemplateGuide = false,
   canDraw = true,
   userAddress = null,
 }: UseCanvasProps) {
@@ -76,8 +66,8 @@ export function useCanvas({
   const [pixelsVersion, setPixelsVersion] = useState<number>(0);
 
   // Viewport transformation: zoom and pan
-  const [scale, setScale] = useState<number>(3.8); // initial comfortable scale
-  const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 260, y: 120 });
+  const [scale, setScale] = useState<number>(3.8);
+  const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [hoveredPixel, setHoveredPixel] = useState<{ x: number; y: number; pixel?: Pixel } | null>(null);
 
   const isPanningRef = useRef(false);
@@ -85,16 +75,53 @@ export function useCanvas({
   const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const lastPlacedRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Initialize pixels
+  const LOCAL_STORAGE_KEY = 'pixora_canvas_snapshot_v2';
+
+  // Save in-memory pixels snapshot to LocalStorage
+  const saveToStorage = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const arr = Array.from(pixelsRef.current.values());
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(arr));
+    } catch {
+      // Ignore quota exceeded in incognito
+    }
+  }, []);
+
+  // Initialize pixels from initialPixels or LocalStorage on mount
   useEffect(() => {
+    let loaded = false;
     if (initialPixels.length > 0 && pixelsRef.current.size === 0) {
       initialPixels.forEach((p) => {
-        pixelsRef.current.set(`${p.x},${p.y}`, p);
+        if (p && p.x >= 0 && p.x < width && p.y >= 0 && p.y < height) {
+          pixelsRef.current.set(`${p.x},${p.y}`, p);
+        }
       });
+      loaded = true;
+    } else if (pixelsRef.current.size === 0 && typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (cached) {
+          const parsed: Pixel[] = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            parsed.forEach((p) => {
+              if (p && p.x >= 0 && p.x < width && p.y >= 0 && p.y < height) {
+                pixelsRef.current.set(`${p.x},${p.y}`, p);
+              }
+            });
+            loaded = true;
+          }
+        }
+      } catch (e) {
+        console.warn('Could not parse cached canvas state:', e);
+      }
+    }
+
+    if (loaded) {
       setPixelsVersion((v) => v + 1);
       requestRender();
     }
-  }, [initialPixels]);
+  }, [initialPixels, width, height]);
 
   // Request high-performance redraw
   const animFrameRef = useRef<number | null>(null);
@@ -105,11 +132,11 @@ export function useCanvas({
       animFrameRef.current = null;
       renderCanvas();
     });
-  }, [scale, offset, hoveredPixel, showHeatmap, showTemplateGuide]);
+  }, [scale, offset, hoveredPixel, showHeatmap]);
 
   useEffect(() => {
     requestRender();
-  }, [showHeatmap, showTemplateGuide, requestRender]);
+  }, [showHeatmap, requestRender]);
 
   const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -146,19 +173,14 @@ export function useCanvas({
     ctx.lineWidth = 1 / scale;
     ctx.strokeRect(0, 0, width, height);
 
-    // Draw community Solana template guide if enabled
-    if (showTemplateGuide) {
-      ctx.save();
-      ctx.globalAlpha = 0.35;
-      SOLANA_TEMPLATE.forEach((t) => {
-        ctx.fillStyle = t.color;
-        ctx.fillRect(t.x, t.y, 1, 1);
-      });
-      ctx.restore();
-    }
+    // Draw placed pixels strictly within the [0, width) x [0, height) bounding box
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, width, height);
+    ctx.clip();
 
-    // Draw placed pixels (with optional battle heatmap overlay)
     pixelsRef.current.forEach((pixel) => {
+      if (pixel.x < 0 || pixel.x >= width || pixel.y < 0 || pixel.y >= height) return;
       if (showHeatmap) {
         const heat = pixel.heat || 1;
         // Battle Heatmap intensity gradient: Gold -> Fiery Orange -> Deep Crimson
@@ -174,6 +196,8 @@ export function useCanvas({
       }
       ctx.fillRect(pixel.x, pixel.y, 1, 1);
     });
+
+    ctx.restore();
 
     // Draw grid lines when zoomed in sufficiently
     if (scale >= 5) {
@@ -240,30 +264,8 @@ export function useCanvas({
           pixelsRef.current.delete(`${gridX},${gridY}`);
           onPixelPlaced(gridX, gridY, '#FFFFFF');
         }
-      } else if (toolMode === 'brush') {
-        // 3x3 brush radius
-        for (let dx = -1; dx <= 1; dx++) {
-          for (let dy = -1; dy <= 1; dy++) {
-            const bx = gridX + dx;
-            const by = gridY + dy;
-            if (bx >= 0 && bx < width && by >= 0 && by < height) {
-              const existing = pixelsRef.current.get(`${bx},${by}`);
-              const p: Pixel = {
-                x: bx,
-                y: by,
-                color: selectedColor,
-                author: userAddress || 'Me',
-                timestamp: Date.now(),
-                isERConfirmed: true,
-                heat: (existing?.heat || 0) + 1,
-              };
-              pixelsRef.current.set(`${bx},${by}`, p);
-              onPixelPlaced(bx, by, selectedColor);
-            }
-          }
-        }
       } else {
-        // Standard pen
+        // Standard pen (10ms ER placement)
         const existing = pixelsRef.current.get(`${gridX},${gridY}`);
         const p: Pixel = {
           x: gridX,
@@ -277,8 +279,9 @@ export function useCanvas({
         pixelsRef.current.set(`${gridX},${gridY}`, p);
         onPixelPlaced(gridX, gridY, selectedColor);
       }
+      saveToStorage();
     },
-    [toolMode, selectedColor, width, height, userAddress, onPixelPlaced]
+    [toolMode, selectedColor, userAddress, onPixelPlaced, saveToStorage]
   );
 
   // Smooth continuous line drawing using Bresenham algorithm
@@ -382,8 +385,12 @@ export function useCanvas({
 
           if (toolMode === 'picker') {
             const existing = pixelsRef.current.get(`${grid.x},${grid.y}`);
-            if (existing) {
-              onPixelPlaced(grid.x, grid.y, existing.color);
+            const pickedColor = existing ? existing.color : '#FFFFFF';
+            if (onSelectColor) {
+              onSelectColor(pickedColor);
+            }
+            if (onSelectTool) {
+              onSelectTool('pen');
             }
             return;
           }
@@ -404,7 +411,7 @@ export function useCanvas({
         }
       }
     },
-    [offset, scale, screenToGrid, toolMode, canDraw, applySinglePixel, onPixelPlaced, onInspectPixel, requestRender]
+    [offset, scale, screenToGrid, toolMode, canDraw, applySinglePixel, onPixelPlaced, onInspectPixel, onSelectColor, onSelectTool, selectedColor, requestRender]
   );
 
   // Pointer Move
@@ -490,6 +497,7 @@ export function useCanvas({
   // External update (from peer or ER sync)
   const setRemotePixel = useCallback(
     (pixel: Pixel) => {
+      if (!pixel || pixel.x < 0 || pixel.x >= width || pixel.y < 0 || pixel.y >= height) return;
       const existing = pixelsRef.current.get(`${pixel.x},${pixel.y}`);
       const updatedPixel: Pixel = {
         ...pixel,
@@ -498,8 +506,9 @@ export function useCanvas({
       pixelsRef.current.set(`${pixel.x},${pixel.y}`, updatedPixel);
       setPixelsVersion((v) => v + 1);
       requestRender();
+      saveToStorage();
     },
-    [requestRender]
+    [width, height, requestRender, saveToStorage]
   );
 
   // External batch update (from server initial state)
@@ -507,6 +516,7 @@ export function useCanvas({
     (pixels: Pixel[]) => {
       if (!pixels || pixels.length === 0) return;
       pixels.forEach((p) => {
+        if (!p || p.x < 0 || p.x >= width || p.y < 0 || p.y >= height) return;
         const existing = pixelsRef.current.get(`${p.x},${p.y}`);
         pixelsRef.current.set(`${p.x},${p.y}`, {
           ...p,
@@ -515,8 +525,9 @@ export function useCanvas({
       });
       setPixelsVersion((v) => v + 1);
       requestRender();
+      saveToStorage();
     },
-    [requestRender]
+    [width, height, requestRender, saveToStorage]
   );
 
   // Attach wheel listener
@@ -530,31 +541,30 @@ export function useCanvas({
     };
   }, [handleWheel]);
 
-  // Center canvas with smart UI clearance (accounts for right sidebar, HUD, and toolbar)
+  // Center canvas perfectly in the viewport
   const centerCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
 
-    // Desktop clearance: Right sidebar takes ~320px
-    const isDesktop = rect.width >= 1024;
-    const rightMargin = isDesktop ? 320 : 20;
-    const leftMargin = isDesktop ? 80 : 20;
+    // Available space with symmetric clearance for top HUD and bottom floating toolbar
+    const paddingX = 40;
+    const paddingY = 140;
 
-    const availableWidth = rect.width - rightMargin - leftMargin;
-    const availableHeight = rect.height - 180; // clearance for top HUD + bottom toolbar
+    const availableWidth = Math.max(rect.width - paddingX, 100);
+    const availableHeight = Math.max(rect.height - paddingY, 100);
 
-    // Calculate optimal scale so 128x128 fits cleanly without overlapping surrounding controls
+    // Calculate optimal scale so 128x128 fits cleanly centered
     const scaleX = availableWidth / width;
     const scaleY = availableHeight / height;
-    const targetScale = Math.min(Math.max(Math.min(scaleX, scaleY), 2.2), 4.4);
+    const targetScale = Math.min(Math.max(Math.min(scaleX, scaleY), 2.0), 5.0);
 
     setScale(targetScale);
 
-    // Calculate center point in the open workspace
-    const centerX = leftMargin + availableWidth / 2;
-    const centerY = (rect.height - 10) / 2;
+    // Exact viewport center
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
 
     setOffset({
       x: Math.round(centerX - (width * targetScale) / 2),
@@ -582,11 +592,48 @@ export function useCanvas({
     [pixelsVersion]
   );
 
+  const zoomIn = useCallback(() => {
+    setScale((prevScale) => {
+      const newScale = Math.min(prevScale * 1.25, 48);
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        setOffset((prevOffset) => ({
+          x: Math.round(centerX - (centerX - prevOffset.x) * (newScale / prevScale)),
+          y: Math.round(centerY - (centerY - prevOffset.y) * (newScale / prevScale)),
+        }));
+      }
+      return newScale;
+    });
+    requestRender();
+  }, [requestRender]);
+
+  const zoomOut = useCallback(() => {
+    setScale((prevScale) => {
+      const newScale = Math.max(prevScale * 0.8, 1.5);
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        setOffset((prevOffset) => ({
+          x: Math.round(centerX - (centerX - prevOffset.x) * (newScale / prevScale)),
+          y: Math.round(centerY - (centerY - prevOffset.y) * (newScale / prevScale)),
+        }));
+      }
+      return newScale;
+    });
+    requestRender();
+  }, [requestRender]);
+
   const clearCanvas = useCallback(() => {
     pixelsRef.current.clear();
     setPixelsVersion((v) => v + 1);
     requestRender();
-  }, [requestRender]);
+    saveToStorage();
+  }, [requestRender, saveToStorage]);
 
   return {
     canvasRef,
@@ -603,6 +650,8 @@ export function useCanvas({
     centerCanvas,
     clearCanvas,
     setScale,
+    zoomIn,
+    zoomOut,
     setRemotePixel,
     setMultipleRemotePixels,
     requestRender,

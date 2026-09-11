@@ -37,7 +37,7 @@ export const EnergyBar: React.FC<EnergyBarProps> = ({
         {energy === maxEnergy
           ? 'Full (10ms ER)'
           : isRecharging
-          ? 'Recharging ⚡'
+          ? 'Recharging...'
           : 'Ready'}
       </span>
     </div>

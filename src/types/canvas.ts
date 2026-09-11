@@ -16,7 +16,7 @@ export interface CanvasState {
   pixels: Map<string, Pixel>; // key: `${x},${y}`
 }
 
-export type ToolMode = 'pen' | 'brush' | 'eraser' | 'picker' | 'inspect';
+export type ToolMode = 'pen' | 'eraser' | 'picker' | 'inspect';
 
 export type AuthMode = 'live';
 

@@ -20,9 +20,42 @@ import { DEFAULT_COLOR } from './lib/palette';
 const CANVAS_WIDTH = 128;
 const CANVAS_HEIGHT = 128;
 
-export const App: React.FC = () => {
+interface AppProps {
+  initialView?: 'landing' | 'canvas' | 'how-it-works';
+}
+
+export const App: React.FC<AppProps> = ({ initialView = 'landing' }) => {
   // Navigation View: 'landing' | 'canvas' | 'how-it-works'
-  const [currentView, setCurrentView] = useState<'landing' | 'canvas' | 'how-it-works'>('landing');
+  const [currentView, setCurrentView] = useState<'landing' | 'canvas' | 'how-it-works'>(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname;
+      if (p === '/canvas') return 'canvas';
+      if (p === '/how-it-works') return 'how-it-works';
+    }
+    return initialView;
+  });
+
+  // Sync route on popstate (browser back/forward)
+  useEffect(() => {
+    const handlePopState = () => {
+      const p = window.location.pathname;
+      if (p === '/canvas') setCurrentView('canvas');
+      else if (p === '/how-it-works') setCurrentView('how-it-works');
+      else setCurrentView('landing');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleNavigate = useCallback((view: 'landing' | 'canvas' | 'how-it-works') => {
+    setCurrentView(view);
+    if (typeof window !== 'undefined') {
+      const targetPath = view === 'landing' ? '/' : `/${view}`;
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState(null, '', targetPath);
+      }
+    }
+  }, []);
 
   // Official Privy Web3 Authentication
   const { ready, authenticated, user, login, logout, connectWallet } = usePrivy();
@@ -57,7 +90,6 @@ export const App: React.FC = () => {
   const [toolMode, setToolMode] = useState<ToolMode>('pen');
   const [isCommitModalOpen, setIsCommitModalOpen] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [showTemplateGuide, setShowTemplateGuide] = useState(false);
 
   // Clean empty starter canvas ready for real painters
   const initialPixels = useMemo<Pixel[]>(() => [], []);
@@ -116,7 +148,7 @@ export const App: React.FC = () => {
   const handlePixelPlaced = useCallback(
     (x: number, y: number, color: string) => {
       if (!authenticated) {
-        setWelcomeToast('🔒 Connect your wallet via Privy to place pixels on Solana ER!');
+        setWelcomeToast('Connect your wallet via Privy to place pixels on Solana ER');
         setTimeout(() => setWelcomeToast(null), 4000);
         if (ready) login();
         return;
@@ -125,7 +157,7 @@ export const App: React.FC = () => {
       // Deduct stroke energy smoothly during continuous drag (at most once every 350ms of active dragging)
       if (now - lastEnergyDeductTimeRef.current > 350) {
         if (energy <= 0) {
-          setWelcomeToast('⚡ Energy recharging! Ready in a moment...');
+          setWelcomeToast('Energy recharging! Ready in a moment...');
           setTimeout(() => setWelcomeToast(null), 2500);
           return;
         }
@@ -149,6 +181,12 @@ export const App: React.FC = () => {
     setInspectedPixel({ x, y, pixel });
   }, []);
 
+  const handleColorPicked = useCallback((color: string) => {
+    setSelectedColor(color);
+    setWelcomeToast(`Selected color ${color.toUpperCase()}`);
+    setTimeout(() => setWelcomeToast(null), 2000);
+  }, []);
+
   // Canvas engine hook
   const {
     canvasRef,
@@ -162,19 +200,22 @@ export const App: React.FC = () => {
     handlePointerUp,
     centerCanvas,
     setScale,
+    zoomIn,
+    zoomOut,
     setRemotePixel,
     setMultipleRemotePixels,
   } = useCanvas({
     width: CANVAS_WIDTH,
     height: CANVAS_HEIGHT,
     selectedColor,
+    onSelectColor: handleColorPicked,
     toolMode,
+    onSelectTool: setToolMode,
     onPixelPlaced: handlePixelPlaced,
     onInspectPixel: handleInspectPixel,
     initialPixels,
     onCursorMove: broadcastCursor,
     showHeatmap,
-    showTemplateGuide,
     canDraw: authenticated,
     userAddress,
   });
@@ -182,17 +223,27 @@ export const App: React.FC = () => {
   setRemotePixelRef.current = setRemotePixel;
   setMultipleRemotePixelsRef.current = setMultipleRemotePixels;
 
+  // Fetch initial server canvas snapshot on mount
+  useEffect(() => {
+    fetch('/api/canvas')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && Array.isArray(data.pixels) && data.pixels.length > 0) {
+          setMultipleRemotePixelsRef.current?.(data.pixels);
+          initRemotePixels(data.pixels);
+        }
+      })
+      .catch(() => {});
+  }, [initRemotePixels]);
+
   // Sync initial batch to server once if this browser already had artwork loaded
   const hasSyncedInitialBatchRef = useRef(false);
   useEffect(() => {
-    if (!hasSyncedInitialBatchRef.current && allPixels.length > 0 && authenticated) {
+    if (!hasSyncedInitialBatchRef.current && allPixels.length > 0) {
       hasSyncedInitialBatchRef.current = true;
       broadcastBatch(allPixels);
     }
-  }, [allPixels.length, authenticated, broadcastBatch]);
-
-  const handleZoomIn = () => setScale((s) => Math.min(s * 1.3, 48));
-  const handleZoomOut = () => setScale((s) => Math.max(s * 0.7, 1.5));
+  }, [allPixels.length, broadcastBatch]);
 
   // Auto-center canvas when navigating to canvas view
   useEffect(() => {
@@ -232,7 +283,7 @@ export const App: React.FC = () => {
 
   const handleOpenWalletModal = useCallback(() => {
     if (!ready) {
-      setWelcomeToast('⏳ Initializing Privy Web3 Auth, please wait a moment...');
+      setWelcomeToast('Initializing Privy Web3 Auth, please wait a moment...');
       setTimeout(() => setWelcomeToast(null), 2500);
       return;
     }
@@ -246,7 +297,7 @@ export const App: React.FC = () => {
 
   const handleDisconnect = useCallback(() => {
     logout();
-    setWelcomeToast('⚡ Disconnected wallet.');
+    setWelcomeToast('Disconnected wallet');
     setTimeout(() => setWelcomeToast(null), 3000);
   }, [logout]);
 
@@ -255,10 +306,10 @@ export const App: React.FC = () => {
       {/* Top Navbar */}
       <Navbar
         currentView={currentView}
-        onNavigate={setCurrentView}
+        onNavigate={handleNavigate}
         onOpenCommit={() => {
           if (!authenticated) {
-            setWelcomeToast('🔒 Connect your wallet to commit to Solana L1!');
+            setWelcomeToast('Connect your wallet to commit to Solana L1');
             setTimeout(() => setWelcomeToast(null), 4000);
             if (ready) login();
             return;
@@ -279,8 +330,8 @@ export const App: React.FC = () => {
         {currentView === 'landing' && (
           <div className="w-full h-full overflow-y-auto">
             <LandingHero
-              onLaunchCanvas={() => setCurrentView('canvas')}
-              onOpenHowItWorks={() => setCurrentView('how-it-works')}
+              onLaunchCanvas={() => handleNavigate('canvas')}
+              onOpenHowItWorks={() => handleNavigate('how-it-works')}
               onOpenWalletModal={handleOpenWalletModal}
               userAddress={userAddress}
             />
@@ -291,8 +342,8 @@ export const App: React.FC = () => {
         {currentView === 'how-it-works' && (
           <div className="w-full h-full overflow-y-auto">
             <HowItWorksPage
-              onBackToLanding={() => setCurrentView('landing')}
-              onLaunchCanvas={() => setCurrentView('canvas')}
+              onBackToLanding={() => handleNavigate('landing')}
+              onLaunchCanvas={() => handleNavigate('canvas')}
             />
           </div>
         )}
@@ -314,24 +365,21 @@ export const App: React.FC = () => {
                 remoteCursors={remotePeers}
                 hoveredPixel={hoveredPixel}
                 showHeatmap={showHeatmap}
-                showTemplateGuide={showTemplateGuide}
               />
             </main>
 
-            {/* Floating Bottom Toolbar (Unified stack: EnergyBar -> Palette -> Tools) */}
+            {/* Floating Bottom Toolbar (Clean unified dock) */}
             <Toolbar
               selectedColor={selectedColor}
               onSelectColor={setSelectedColor}
               toolMode={toolMode}
               onSelectTool={setToolMode}
-              onZoomIn={handleZoomIn}
-              onZoomOut={handleZoomOut}
+              onZoomIn={zoomIn}
+              onZoomOut={zoomOut}
               onResetView={centerCanvas}
               onExportPNG={handleExportPNG}
               showHeatmap={showHeatmap}
               onToggleHeatmap={() => setShowHeatmap((prev) => !prev)}
-              showTemplateGuide={showTemplateGuide}
-              onToggleTemplateGuide={() => setShowTemplateGuide((prev) => !prev)}
               energy={energy}
               maxEnergy={maxEnergy}
               isRecharging={isRecharging}

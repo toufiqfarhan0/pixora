@@ -277,10 +277,10 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
       <section className="py-16 px-6 sm:px-12 max-w-5xl mx-auto border-t border-zinc-200/80">
         <div className="text-center max-w-xl mx-auto mb-12">
           <h2 className="text-2xl sm:text-3xl font-bold font-[var(--font-display)] text-zinc-900">
-            Why Canvas on Standard Solana Failed
+            Why Canvas on Base Layer Solana Fails
           </h2>
           <p className="text-sm text-zinc-600 mt-2">
-            The Graveyard is filled with projects that tried to build onchain games and canvases directly on L1.
+            Interactive real-time games require sub-second latency and zero gas that base layer L1 cannot provide alone.
           </p>
         </div>
 

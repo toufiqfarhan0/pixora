@@ -15,10 +15,13 @@ interface UseMagicBlockERProps {
 }
 
 export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' }: UseMagicBlockERProps) {
+  const LOCAL_TX_KEY = 'pixora_canvas_tx_count_v2';
+  const LOCAL_STORAGE_KEY = 'pixora_canvas_snapshot_v2';
+
   const [telemetry, setTelemetry] = useState<ERTelemetry>({
     blockTimeMs: 10,
     gasSpentUsd: 0.0,
-    txCount: 0, // Real transaction count, starts at 0
+    txCount: 0,
     lastTxTime: null,
     status: 'active',
     activeRollupNode: 'magic-router-er-node-01.us-east.magicblock.app',
@@ -28,6 +31,44 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     authMode,
     secondsUntilNextSettle: 60,
   });
+
+  // Restore client-side cached transaction count after mount (avoids SSR hydration mismatch)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const savedTx = localStorage.getItem(LOCAL_TX_KEY);
+      if (savedTx) {
+        const parsed = parseInt(savedTx, 10);
+        if (!isNaN(parsed) && parsed > 0) {
+          setTelemetry((prev) => ({
+            ...prev,
+            txCount: Math.max(prev.txCount, parsed),
+            lastTxTime: Date.now(),
+          }));
+          return;
+        }
+      }
+      const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (cached) {
+        const arr = JSON.parse(cached);
+        if (Array.isArray(arr) && arr.length > 0) {
+          setTelemetry((prev) => ({
+            ...prev,
+            txCount: Math.max(prev.txCount, arr.length),
+            lastTxTime: Date.now(),
+          }));
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Save updated transaction count
+  const persistTxCount = useCallback((count: number) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(LOCAL_TX_KEY, String(count));
+    } catch {}
+  }, []);
 
   // 60-second periodic L1 settlement countdown ticker
   useEffect(() => {
@@ -80,11 +121,15 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
       pendingPixelsRef.current.push(newPixel);
 
       // Instantly update local telemetry
-      setTelemetry((prev) => ({
-        ...prev,
-        txCount: prev.txCount + 1,
-        lastTxTime: Date.now(),
-      }));
+      setTelemetry((prev) => {
+        const nextCount = prev.txCount + 1;
+        persistTxCount(nextCount);
+        return {
+          ...prev,
+          txCount: nextCount,
+          lastTxTime: Date.now(),
+        };
+      });
 
       // Add to live activity feed
       const activity: ActivityItem = {
@@ -101,16 +146,21 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
 
       return newPixel;
     },
-    [userAddress, authMode]
+    [userAddress, authMode, persistTxCount]
   );
 
   // Record pixel from a remote peer who painted
   const recordRemotePixel = useCallback((pixel: Pixel) => {
-    setTelemetry((prev) => ({
-      ...prev,
-      txCount: prev.txCount + 1,
-      lastTxTime: Date.now(),
-    }));
+    if (!pixel || pixel.x < 0 || pixel.x >= 128 || pixel.y < 0 || pixel.y >= 128) return;
+    setTelemetry((prev) => {
+      const nextCount = prev.txCount + 1;
+      persistTxCount(nextCount);
+      return {
+        ...prev,
+        txCount: nextCount,
+        lastTxTime: Date.now(),
+      };
+    });
 
     const activity: ActivityItem = {
       id: (pixel.txHash || generateTxHash()).slice(0, 10),
@@ -123,18 +173,23 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     };
 
     setActivities((prev) => [activity, ...prev.slice(0, 29)]);
-  }, []);
+  }, [persistTxCount]);
 
   // Initialize bulk activities and telemetry from server snapshot
   const initRemotePixels = useCallback((pixels: Pixel[]) => {
     if (!pixels || pixels.length === 0) return;
-    setTelemetry((prev) => ({
-      ...prev,
-      txCount: Math.max(prev.txCount, pixels.length),
-      lastTxTime: Date.now(),
-    }));
+    const valid = pixels.filter((p) => p && p.x >= 0 && p.x < 128 && p.y >= 0 && p.y < 128);
+    setTelemetry((prev) => {
+      const nextCount = Math.max(prev.txCount, valid.length);
+      persistTxCount(nextCount);
+      return {
+        ...prev,
+        txCount: nextCount,
+        lastTxTime: Date.now(),
+      };
+    });
 
-    const newActivities: ActivityItem[] = pixels
+    const newActivities: ActivityItem[] = valid
       .slice(-20)
       .reverse()
       .map((pixel) => ({

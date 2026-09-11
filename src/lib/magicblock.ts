@@ -15,17 +15,18 @@ export const MAGICBLOCK_DEVNET_ROUTER =
 export const MAGICBLOCK_WS_ENDPOINT =
   process.env.NEXT_PUBLIC_EPHEMERAL_RPC_URL || 'wss://devnet.magicblock.app';
 
-// Verified Base58 Program ID and derived Canvas PDA
-export const PIXORA_PROGRAM_ID = new PublicKey(
-  process.env.NEXT_PUBLIC_PROGRAM_ID || 'Pxra6Kev7iEom8n9zF2fHQKwhu68hL4WnU2qVwB7uS8'
-);
+// Verified Base58 Program ID and derived Canvas PDA strictly from environment variables
+const envProgramId = process.env.NEXT_PUBLIC_PROGRAM_ID || '';
+export const PIXORA_PROGRAM_ID: PublicKey = envProgramId
+  ? new PublicKey(envProgramId)
+  : (null as unknown as PublicKey);
 
-export const [CANVAS_PDA, CANVAS_PDA_BUMP] = PublicKey.findProgramAddressSync(
-  [Buffer.from('canvas')],
-  PIXORA_PROGRAM_ID
-);
+export const [CANVAS_PDA, CANVAS_PDA_BUMP] = PIXORA_PROGRAM_ID
+  ? PublicKey.findProgramAddressSync([Buffer.from('canvas')], PIXORA_PROGRAM_ID)
+  : [null as unknown as PublicKey, 0];
 
-export const CANVAS_ACCOUNT_PUBKEY = CANVAS_PDA.toBase58();
+export const CANVAS_ACCOUNT_PUBKEY: string =
+  process.env.NEXT_PUBLIC_CANVAS_PDA || (CANVAS_PDA ? CANVAS_PDA.toBase58() : '');
 
 // MagicRouter Connection Instance
 let magicRouterInstance: ConnectionMagicRouter | null = null;

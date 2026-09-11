@@ -36,10 +36,13 @@ export async function GET(req: Request) {
         }
       });
 
-      // Send initial snapshot immediately to the new client
+      // Send initial snapshot immediately to the new client (clean 128x128 bounds only)
+      const validPixels = Array.from(state.pixels.values()).filter(
+        (p) => p && p.x >= 0 && p.x < 128 && p.y >= 0 && p.y < 128
+      );
       const initialEvent: ServerRealtimeEvent = {
         type: 'INIT_STATE',
-        pixels: Array.from(state.pixels.values()),
+        pixels: validPixels,
         peers: Array.from(state.cursors.values()).filter((c) => c.id !== sessionId),
       };
       sendEvent(initialEvent);
@@ -89,12 +92,14 @@ export async function POST(req: Request) {
 
     if (event.type === 'PIXEL_PAINT') {
       const p = event.pixel;
-      state.pixels.set(`${p.x},${p.y}`, p);
-      broadcastToClients(event, sessionId);
+      if (p && p.x >= 0 && p.x < 128 && p.y >= 0 && p.y < 128) {
+        state.pixels.set(`${p.x},${p.y}`, p);
+        broadcastToClients(event, sessionId);
+      }
     } else if (event.type === 'BATCH_PIXELS') {
       if (Array.isArray(event.pixels)) {
         event.pixels.forEach((p) => {
-          if (p && typeof p.x === 'number' && typeof p.y === 'number') {
+          if (p && typeof p.x === 'number' && typeof p.y === 'number' && p.x >= 0 && p.x < 128 && p.y >= 0 && p.y < 128) {
             state.pixels.set(`${p.x},${p.y}`, p);
           }
         });
