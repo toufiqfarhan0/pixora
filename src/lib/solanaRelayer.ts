@@ -7,8 +7,6 @@ import {
   sendAndConfirmTransaction,
   LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
-import bs58 from 'bs58';
-
 // SPL Memo Program ID on Solana (present across all clusters)
 export const MEMO_PROGRAM_ID = new PublicKey(
   'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'
@@ -20,9 +18,40 @@ const SOLANA_RPC_URL =
 let cachedConnection: Connection | null = null;
 let cachedKeypair: Keypair | null = null;
 
-function getDecodeFn() {
-  const anyBs58 = bs58 as any;
-  return anyBs58.decode || anyBs58.default?.decode;
+// Self-contained Base58 decoder (avoids external dependency mismatches on serverless runtimes)
+const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+const BASE58_MAP = new Map<string, number>();
+for (let i = 0; i < BASE58_ALPHABET.length; i++) {
+  BASE58_MAP.set(BASE58_ALPHABET[i], i);
+}
+
+export function decodeBase58(str: string): Uint8Array {
+  if (!str || str.length === 0) return new Uint8Array(0);
+  const bytes = [0];
+  for (let i = 0; i < str.length; i++) {
+    const val = BASE58_MAP.get(str[i]);
+    if (val === undefined) {
+      throw new Error(`Invalid base58 character '${str[i]}'`);
+    }
+    for (let j = 0; j < bytes.length; j++) {
+      bytes[j] *= 58;
+    }
+    bytes[0] += val;
+    let carry = 0;
+    for (let j = 0; j < bytes.length; j++) {
+      bytes[j] += carry;
+      carry = bytes[j] >> 8;
+      bytes[j] &= 0xff;
+    }
+    while (carry > 0) {
+      bytes.push(carry & 0xff);
+      carry >>= 8;
+    }
+  }
+  for (let i = 0; i < str.length && str[i] === '1'; i++) {
+    bytes.push(0);
+  }
+  return new Uint8Array(bytes.reverse());
 }
 
 export function getConnection(): Connection {
@@ -46,8 +75,7 @@ export function getRelayerKeypair(): Keypair | null {
       const arr = JSON.parse(rawKey);
       cachedKeypair = Keypair.fromSecretKey(new Uint8Array(arr));
     } else {
-      const decode = getDecodeFn();
-      const bytes = decode(rawKey);
+      const bytes = decodeBase58(rawKey);
       cachedKeypair = Keypair.fromSecretKey(bytes);
     }
     return cachedKeypair;
