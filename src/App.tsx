@@ -82,8 +82,12 @@ export const App: React.FC<AppProps> = ({ initialView = 'landing' }) => {
     if (!authenticated || !user) return null;
     if (user.google?.email) return 'Google';
     if (user.email?.address) return 'Email';
-    if (user.wallet?.walletClientType === 'metamask') return 'MetaMask';
-    return 'Solana';
+    const type = user.wallet?.walletClientType?.toLowerCase();
+    if (type === 'phantom') return 'Phantom';
+    if (type === 'solflare') return 'Solflare';
+    if (type === 'backpack') return 'Backpack';
+    if (type === 'metamask') return 'MetaMask';
+    return user.wallet?.walletClientType || 'Solana';
   }, [authenticated, user]);
 
   const authMode: AuthMode = 'live';
@@ -107,6 +111,7 @@ export const App: React.FC<AppProps> = ({ initialView = 'landing' }) => {
     initRemotePixels,
     syncTxCount,
     commitToSolanaL1,
+    recordStrokeBatchOnchain,
     isCommitting,
     lastCommitResult,
   } = useMagicBlockER({
@@ -198,6 +203,11 @@ export const App: React.FC<AppProps> = ({ initialView = 'landing' }) => {
     setTimeout(() => setWelcomeToast(null), 2000);
   }, []);
 
+  const handleStrokeEnd = useCallback(() => {
+    flushPendingBatch();
+    recordStrokeBatchOnchain(1);
+  }, [flushPendingBatch, recordStrokeBatchOnchain]);
+
   // Canvas engine hook
   const {
     canvasRef,
@@ -226,7 +236,7 @@ export const App: React.FC<AppProps> = ({ initialView = 'landing' }) => {
     onInspectPixel: handleInspectPixel,
     initialPixels,
     onCursorMove: broadcastCursor,
-    onStrokeEnd: flushPendingBatch,
+    onStrokeEnd: handleStrokeEnd,
     showHeatmap,
     canDraw: authenticated,
     userAddress,

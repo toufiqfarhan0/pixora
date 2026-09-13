@@ -30,8 +30,11 @@ export async function GET() {
     },
     settlement: {
       l1Network: 'solana-devnet',
-      lastCommitTx: '2wccdWJjvWuawQ8smHhtjoTMw6KdZ4RwyUwWHGn8T5FHNpGk4cJ3wFR6p537Uw6NXp67xMsEFdJR5RFrut5RdH78',
-      explorerUrl: 'https://explorer.solana.com/tx/2wccdWJjvWuawQ8smHhtjoTMw6KdZ4RwyUwWHGn8T5FHNpGk4cJ3wFR6p537Uw6NXp67xMsEFdJR5RFrut5RdH78?cluster=devnet',
+      lastCommitTx: state.lastCommitTx || null,
+      lastCommitRoot: state.lastCommitRoot || null,
+      explorerUrl: state.lastCommitTx
+        ? `https://explorer.solana.com/tx/${state.lastCommitTx}?cluster=devnet`
+        : null,
     },
     timestamp: Date.now(),
   });

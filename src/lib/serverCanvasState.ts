@@ -46,6 +46,9 @@ interface GlobalState {
   cursors: Map<string, RemoteCursor>;
   globalTxCount: number;
   lastUpdated: number;
+  lastCommitTx?: string;
+  lastCommitRoot?: string;
+  lastCommitTime?: number;
 }
 
 declare global {
@@ -55,7 +58,13 @@ declare global {
 
 const DISK_FILE = path.join(os.tmpdir(), 'pixora_canvas_snapshot.json');
 
-function tryLoadFromDisk(): { pixels: Pixel[]; globalTxCount: number } | null {
+function tryLoadFromDisk(): {
+  pixels: Pixel[];
+  globalTxCount: number;
+  lastCommitTx?: string;
+  lastCommitRoot?: string;
+  lastCommitTime?: number;
+} | null {
   try {
     if (fs.existsSync(DISK_FILE)) {
       const raw = fs.readFileSync(DISK_FILE, 'utf8');
@@ -64,6 +73,9 @@ function tryLoadFromDisk(): { pixels: Pixel[]; globalTxCount: number } | null {
         return {
           pixels: data.pixels,
           globalTxCount: typeof data.globalTxCount === 'number' ? data.globalTxCount : data.pixels.length,
+          lastCommitTx: data.lastCommitTx,
+          lastCommitRoot: data.lastCommitRoot,
+          lastCommitTime: data.lastCommitTime,
         };
       }
     }
@@ -79,6 +91,9 @@ export function trySaveToDisk(state: GlobalState) {
       pixels: Array.from(state.pixels.values()),
       globalTxCount: state.globalTxCount,
       lastUpdated: state.lastUpdated,
+      lastCommitTx: state.lastCommitTx,
+      lastCommitRoot: state.lastCommitRoot,
+      lastCommitTime: state.lastCommitTime,
     };
     fs.writeFileSync(DISK_FILE, JSON.stringify(data), 'utf8');
   } catch {
@@ -104,6 +119,9 @@ export function getServerState(): GlobalState {
       cursors: new Map(),
       globalTxCount: loaded?.globalTxCount || pixelMap.size,
       lastUpdated: Date.now(),
+      lastCommitTx: loaded?.lastCommitTx,
+      lastCommitRoot: loaded?.lastCommitRoot,
+      lastCommitTime: loaded?.lastCommitTime,
     };
   }
   return globalThis.__pixoraGlobalState;

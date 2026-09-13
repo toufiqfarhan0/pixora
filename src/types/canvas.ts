@@ -42,6 +42,7 @@ export interface ActivityItem {
   author: string;
   timestamp: number;
   isVerified?: boolean;
+  txHash?: string;
 }
 
 export interface ColorPalette {

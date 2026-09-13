@@ -23,6 +23,19 @@ const nextConfig = {
     };
 
     config.externals.push('pino-pretty', 'lokijs', 'encoding');
+
+    // Suppress harmless dynamic import expression warnings from ox / viem
+    config.module = {
+      ...config.module,
+      exprContextCritical: false,
+    };
+
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      { module: /ox\/_esm\/tempo/ },
+      { message: /Critical dependency: the request of a dependency is an expression/ },
+    ];
+
     return config;
   },
   experimental: {

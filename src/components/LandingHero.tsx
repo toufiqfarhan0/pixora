@@ -10,6 +10,8 @@ import {
   ExternalLink,
   Cpu,
   MousePointer,
+  X,
+  Check,
 } from 'lucide-react';
 import { PixoraLogo } from './PixoraLogo';
 
@@ -233,7 +235,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
           <div className="grid sm:grid-cols-3 gap-3.5 pt-4 border-t border-zinc-100 font-mono">
             <div className="p-4 rounded-xl bg-rose-50/60 border border-rose-100/90 flex flex-col gap-1.5 shadow-2xs">
               <div className="flex items-center gap-1.5 text-rose-600 text-xs font-bold">
-                <span>▸</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                 <span>The Web2 Flaw</span>
               </div>
               <p className="text-xs sm:text-sm font-bold text-zinc-900 font-[var(--font-display)]">
@@ -246,7 +248,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
             <div className="p-4 rounded-xl bg-orange-50/60 border border-orange-100/90 flex flex-col gap-1.5 shadow-2xs">
               <div className="flex items-center gap-1.5 text-[#FF4D26] text-xs font-bold">
-                <span>▸</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FF4D26]" />
                 <span>The ER Breakthrough</span>
               </div>
               <p className="text-xs sm:text-sm font-bold text-zinc-900 font-[var(--font-display)]">
@@ -259,7 +261,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
             <div className="p-4 rounded-xl bg-brand-50/60 border border-brand-100/90 flex flex-col gap-1.5 shadow-2xs">
               <div className="flex items-center gap-1.5 text-brand-600 text-xs font-bold">
-                <span>▸</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
                 <span>The Blockchain Promise</span>
               </div>
               <p className="text-xs sm:text-sm font-bold text-zinc-900 font-[var(--font-display)]">
@@ -295,19 +297,19 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             </div>
             <ul className="space-y-3 text-xs sm:text-sm text-zinc-600">
               <li className="flex items-start gap-2.5">
-                <span className="text-rose-500 font-bold mt-0.5">✕</span>
+                <X className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
                 <span><strong>400ms Block Latency:</strong> Drawing stutters and lags behind human hand movements.</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-rose-500 font-bold mt-0.5">✕</span>
+                <X className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
                 <span><strong>Wallet Pop-up Hell:</strong> Traditional wallets pop up asking for approval on every single dot placed.</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-rose-500 font-bold mt-0.5">✕</span>
+                <X className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
                 <span><strong>Network Fees:</strong> Drawing 50 pixels costs $0.10+ in wasted gas fees.</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-rose-500 font-bold mt-0.5">✕</span>
+                <X className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
                 <span><strong>Account Contention:</strong> High concurrent edits block or fail transactions.</span>
               </li>
             </ul>
@@ -327,19 +329,19 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             </div>
             <ul className="space-y-3 text-xs sm:text-sm text-zinc-700">
               <li className="flex items-start gap-2.5">
-                <span className="text-[#FF4D26] font-bold mt-0.5">✓</span>
+                <Check className="h-4 w-4 text-[#FF4D26] shrink-0 mt-0.5" />
                 <span><strong>10ms Block Time:</strong> Instant visual feedback for continuous, fluid brush strokes.</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-[#FF4D26] font-bold mt-0.5">✓</span>
+                <Check className="h-4 w-4 text-[#FF4D26] shrink-0 mt-0.5" />
                 <span><strong>Zero Gas per Pixel:</strong> Paint thousands of pixels without spending a single lamport.</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-[#FF4D26] font-bold mt-0.5">✓</span>
+                <Check className="h-4 w-4 text-[#FF4D26] shrink-0 mt-0.5" />
                 <span><strong>Session Delegation:</strong> Connect once via Solana wallet; zero pop-ups during painting.</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-[#FF4D26] font-bold mt-0.5">✓</span>
+                <Check className="h-4 w-4 text-[#FF4D26] shrink-0 mt-0.5" />
                 <span><strong>Solana L1 Settlement:</strong> 1-click atomic commit permanently seals canvas to Solana L1.</span>
               </li>
             </ul>
@@ -372,8 +374,9 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 Transactions process continuously on dedicated SVM execution environments, allowing 100+ strokes per minute without blockchain throttling.
               </p>
             </div>
-            <span className="text-[11px] font-mono text-brand-600 font-bold mt-4 block">
-              MagicBlock Runtime →
+            <span className="text-[11px] font-mono text-brand-600 font-bold mt-4 inline-flex items-center gap-1">
+              <span>MagicBlock Runtime</span>
+              <ArrowRight className="h-3 w-3 text-brand-600" />
             </span>
           </div>
 
@@ -390,8 +393,9 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 Connect via Phantom, Solflare, or standard wallet. A temporary session key authorizes gasless drawing without exposing private keys.
               </p>
             </div>
-            <span className="text-[11px] font-mono text-brand-600 font-bold mt-4 block">
-              Solana Auth →
+            <span className="text-[11px] font-mono text-brand-600 font-bold mt-4 inline-flex items-center gap-1">
+              <span>Solana Auth</span>
+              <ArrowRight className="h-3 w-3 text-brand-600" />
             </span>
           </div>
 
@@ -408,8 +412,9 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 When a canvas round is sealed, MagicBlock's Magic Actions generate a cryptographic root hash committed directly back to Solana Layer 1.
               </p>
             </div>
-            <span className="text-[11px] font-mono text-purple-600 font-bold mt-4 block">
-              Solana Settlement →
+            <span className="text-[11px] font-mono text-purple-600 font-bold mt-4 inline-flex items-center gap-1">
+              <span>Solana Settlement</span>
+              <ArrowRight className="h-3 w-3 text-purple-600" />
             </span>
           </div>
         </div>
@@ -426,28 +431,31 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             href="https://build.magicblock.app/graveyard"
             target="_blank"
             rel="noreferrer"
-            className="hover:text-brand-600 transition-colors"
+            className="inline-flex items-center gap-1 hover:text-brand-600 transition-colors"
           >
-            MagicBlock Graveyard ↗
+            <span>MagicBlock Graveyard</span>
+            <ExternalLink className="h-3 w-3 text-zinc-400" />
           </a>
           <a
             href="https://docs.magicblock.gg"
             target="_blank"
             rel="noreferrer"
-            className="hover:text-brand-600 transition-colors"
+            className="inline-flex items-center gap-1 hover:text-brand-600 transition-colors"
           >
-            Documentation ↗
+            <span>Documentation</span>
+            <ExternalLink className="h-3 w-3 text-zinc-400" />
           </a>
           <a
             href="https://github.com/toufiqfarhan0/pixora"
             target="_blank"
             rel="noreferrer"
-            className="hover:text-brand-600 transition-colors"
+            className="inline-flex items-center gap-1 hover:text-brand-600 transition-colors"
           >
-            GitHub Repo ↗
+            <span>GitHub Repo</span>
+            <ExternalLink className="h-3 w-3 text-zinc-400" />
           </a>
         </div>
-        <p>© 2026 Pixora · Sub-10ms Massively Shared Onchain Canvas on Solana & MagicBlock.</p>
+        <p>2026 Pixora · Sub-10ms Massively Shared Onchain Canvas on Solana & MagicBlock.</p>
       </footer>
     </div>
   );

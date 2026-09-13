@@ -40,11 +40,10 @@ export const PixelInspectorModal: React.FC<PixelInspectorModalProps> = ({
       })
     : 'Ready for placement';
 
-  const txHash =
-    pixel?.txHash ||
-    '3U15N3fwxeC7HTD1F6tZYTgY7eGxWju3yMjZwybK14RzB6RxzNt7wiP9uc6YurFKvGy4cd56UFTMnNhM8nSdYUfh';
-
-  const explorerTxUrl = `https://explorer.solana.com/tx/${txHash}?cluster=devnet`;
+  const txHash = pixel?.txHash || null;
+  const explorerTxUrl = txHash
+    ? `https://explorer.solana.com/tx/${txHash}?cluster=devnet`
+    : null;
   const explorerAuthorUrl =
     pixel?.author && pixel.author !== 'Me' && pixel.author.length > 20
       ? `https://explorer.solana.com/address/${pixel.author}?cluster=devnet`
@@ -177,21 +176,27 @@ export const PixelInspectorModal: React.FC<PixelInspectorModalProps> = ({
               <div className="flex items-center justify-between mb-1">
                 <span className="text-zinc-500">Devnet Settlement Tx</span>
                 <span className="text-[10px] text-[#FF4D26] font-semibold bg-orange-50 px-1.5 py-0.5 rounded">
-                  Confirmed
+                  {explorerTxUrl ? 'Confirmed' : 'ER Sequenced'}
                 </span>
               </div>
-              <a
-                href={explorerTxUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center justify-between p-2 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/60 transition-colors"
-                title="View on Solana Explorer"
-              >
-                <span className="font-mono text-[11px] text-zinc-600 truncate mr-2">
-                  {shortAddress(txHash, 8)}
-                </span>
-                <ExternalLink className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700 shrink-0" />
-              </a>
+              {explorerTxUrl && txHash ? (
+                <a
+                  href={explorerTxUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center justify-between p-2 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/60 transition-colors"
+                  title="View on Solana Explorer"
+                >
+                  <span className="font-mono text-[11px] text-zinc-600 truncate mr-2">
+                    {shortAddress(txHash, 8)}
+                  </span>
+                  <ExternalLink className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700 shrink-0" />
+                </a>
+              ) : (
+                <div className="p-2 rounded-lg bg-zinc-50 border border-zinc-200/60 text-zinc-500 text-[11px] font-mono">
+                  State active in Ephemeral Rollup (anchored on next L1 Commit)
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CheckCircle2, Layers, ExternalLink, Sparkles } from 'lucide-react';
+import { X, CheckCircle2, Layers, ExternalLink, Sparkles, ArrowRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Pixel, AuthMode } from '../types/canvas';
 import { computeCanvasStateHash, shortAddress } from '../lib/magicblock';
@@ -38,20 +38,35 @@ export const CommitModal: React.FC<CommitModalProps> = ({
   onOpenPrivyModal,
 }) => {
   const [success, setSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const relayerPubkey = process.env.NEXT_PUBLIC_RELAYER_PUBKEY || 'EnCmpAE2oKBeoRKsgxi1YJBTUMsTbgwZmbQNsXkV7qyD';
 
   if (!isOpen) return null;
 
   const handleTriggerCommit = async () => {
-    const result = await onCommit(pixels);
-    if (result) {
-      setSuccess(true);
-      confetti({
-        particleCount: 90,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#FF4D26', '#4F46E5', '#EC4899', '#F59E0B', '#A855F7'],
-      });
+    setErrorMsg(null);
+    try {
+      const result = await onCommit(pixels);
+      if (result) {
+        setSuccess(true);
+        confetti({
+          particleCount: 90,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#FF4D26', '#4F46E5', '#EC4899', '#F59E0B', '#A855F7'],
+        });
+      }
+    } catch (err: any) {
+      console.error('Commit failed:', err);
+      setErrorMsg(err?.message || 'Commit failed. Please check Devnet SOL balance.');
     }
+  };
+
+  const copyRelayerKey = () => {
+    navigator.clipboard.writeText(relayerPubkey);
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
   };
 
   const stateHash = computeCanvasStateHash(pixels);
@@ -76,8 +91,10 @@ export const CommitModal: React.FC<CommitModalProps> = ({
             <h3 className="font-bold text-lg text-zinc-900 font-[var(--font-display)]">
               Commit Canvas to Solana L1
             </h3>
-            <p className="text-xs text-zinc-500 font-[var(--font-mono)]">
-              MagicBlock Ephemeral Rollup ➔ Solana Base Layer
+            <p className="text-xs text-zinc-500 font-[var(--font-mono)] flex items-center gap-1.5 mt-0.5">
+              <span>MagicBlock Ephemeral Rollup</span>
+              <ArrowRight className="h-3 w-3 text-zinc-400 shrink-0" />
+              <span>Solana Base Layer</span>
             </p>
           </div>
         </div>
@@ -125,6 +142,40 @@ export const CommitModal: React.FC<CommitModalProps> = ({
               {lastCommitResult ? lastCommitResult.stateRoot : stateHash}
             </p>
           </div>
+
+          {/* Error Message & Faucet Helper */}
+          {errorMsg && (
+            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 flex flex-col gap-2 font-sans animate-fade-in">
+              <div className="flex items-start gap-2">
+                <span className="h-2 w-2 rounded-full bg-red-500 shrink-0 mt-1.5" />
+                <div className="flex-1">
+                  <p className="text-xs font-semibold">{errorMsg}</p>
+                  <p className="text-[11px] text-red-600 mt-1">
+                    Send free Devnet SOL from{' '}
+                    <a
+                      href="https://faucet.solana.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline font-bold text-red-700 hover:text-red-900"
+                    >
+                      faucet.solana.com
+                    </a>{' '}
+                    to the relayer wallet:
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-red-100/60 font-mono text-[11px] text-red-900">
+                <span className="truncate mr-2">{relayerPubkey}</span>
+                <button
+                  onClick={copyRelayerKey}
+                  type="button"
+                  className="px-2 py-0.5 rounded bg-white text-xs font-semibold text-red-700 shadow-sm hover:bg-red-50 shrink-0"
+                >
+                  {copiedKey ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Success Proof Banner */}
           {success && lastCommitResult && (

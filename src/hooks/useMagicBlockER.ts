@@ -3,9 +3,7 @@ import { ERTelemetry, Pixel, ActivityItem, AuthMode } from '../types/canvas';
 import {
   MAGICBLOCK_DEVNET_ROUTER,
   CANVAS_ACCOUNT_PUBKEY,
-  generateTxHash,
   computeCanvasStateHash,
-  getLiveDevnetCommitSignature,
 } from '../lib/magicblock';
 
 interface UseMagicBlockERProps {
@@ -27,8 +25,8 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     status: 'active',
     activeRollupNode: 'magic-router-er-node-01.us-east.magicblock.app',
     delegatedAccount: CANVAS_ACCOUNT_PUBKEY,
-    l1CommittedCount: 1,
-    lastL1CommitHash: '2wccdWJjvWuawQ8smHhtjoTMw6KdZ4RwyUwWHGn8T5FHNpGk4cJ3wFR6p537Uw6NXp67xMsEFdJR5RFrut5RdH78',
+    l1CommittedCount: 0,
+    lastL1CommitHash: '',
     authMode,
     secondsUntilNextSettle: 60,
   });
@@ -109,12 +107,13 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
 
   // Buffer of pending pixels for 10ms batching
   const pendingPixelsRef = useRef<Pixel[]>([]);
+  const latestOnchainTxRef = useRef<string>('');
 
   // Push placed pixel through the 10ms Ephemeral Rollup pipeline
   const streamPixel = useCallback(
     (x: number, y: number, color: string): Pixel => {
       const authorName = userAddress || 'Solana Painter';
-      const txHash = generateTxHash();
+      const txHash = latestOnchainTxRef.current || telemetry.lastL1CommitHash || '';
 
       const newPixel: Pixel = {
         x,
@@ -142,20 +141,21 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
 
       // Add to live activity feed
       const activity: ActivityItem = {
-        id: txHash.slice(0, 10),
+        id: txHash ? txHash.slice(0, 10) : `px-${x}-${y}-${Date.now().toString().slice(-4)}`,
         x,
         y,
         color,
         author: authorName,
         timestamp: Date.now(),
         isVerified: true,
+        txHash: txHash || undefined,
       };
 
       setActivities((prev) => [activity, ...prev.slice(0, 199)]);
 
       return newPixel;
     },
-    [userAddress, authMode, persistTxCount]
+    [userAddress, authMode, persistTxCount, telemetry.lastL1CommitHash]
   );
 
   // Record pixel from a remote peer who painted
@@ -172,13 +172,16 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     });
 
     const activity: ActivityItem = {
-      id: (pixel.txHash || generateTxHash()).slice(0, 10),
+      id: pixel.txHash
+        ? pixel.txHash.slice(0, 10)
+        : `px-${pixel.x}-${pixel.y}-${(pixel.timestamp || Date.now()).toString().slice(-4)}`,
       x: pixel.x,
       y: pixel.y,
       color: pixel.color,
       author: pixel.author,
       timestamp: pixel.timestamp || Date.now(),
       isVerified: pixel.isVerified ?? true,
+      txHash: pixel.txHash,
     };
 
     setActivities((prev) => [activity, ...prev.slice(0, 199)]);
@@ -204,13 +207,16 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
       .slice(-40)
       .reverse()
       .map((pixel) => ({
-        id: (pixel.txHash || generateTxHash()).slice(0, 10),
+        id: pixel.txHash
+          ? pixel.txHash.slice(0, 10)
+          : `px-${pixel.x}-${pixel.y}-${(pixel.timestamp || Date.now()).toString().slice(-4)}`,
         x: pixel.x,
         y: pixel.y,
         color: pixel.color,
         author: pixel.author,
         timestamp: pixel.timestamp || Date.now(),
         isVerified: pixel.isVerified ?? true,
+        txHash: pixel.txHash,
       }));
 
     setActivities((prev) => [...newActivities, ...prev.slice(0, 180)]);
@@ -234,17 +240,20 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
       .slice(-60)
       .reverse()
       .map((pixel) => ({
-        id: (pixel.txHash || generateTxHash()).slice(0, 10),
+        id: pixel.txHash
+          ? pixel.txHash.slice(0, 10)
+          : `px-${pixel.x}-${pixel.y}-${(pixel.timestamp || Date.now()).toString().slice(-4)}`,
         x: pixel.x,
         y: pixel.y,
         color: pixel.color,
         author: pixel.author,
         timestamp: pixel.timestamp || Date.now(),
         isVerified: pixel.isVerified ?? true,
+        txHash: pixel.txHash,
       }));
 
     setActivities(newActivities);
-  }, []);
+  }, [persistTxCount]);
 
   // Dynamically synchronize transaction count from server/peers
   const syncTxCount = useCallback(
@@ -263,40 +272,94 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     [persistTxCount]
   );
 
-  // Commit canvas state to Solana L1
-  const commitToSolanaL1 = useCallback(async (allPixels: Pixel[]) => {
-    setIsCommitting(true);
-    setTelemetry((prev) => ({ ...prev, status: 'committing' }));
-
-    try {
-      // Cryptographic state root calculation and commitment to Solana Layer 1
-      const stateRoot = computeCanvasStateHash(allPixels);
-      const txHash = await getLiveDevnetCommitSignature();
+  // Commit canvas state to Solana L1 via real Devnet relayer transaction
+  const commitToSolanaL1 = useCallback(
+    async (allPixels: Pixel[]) => {
+      setIsCommitting(true);
+      setTelemetry((prev) => ({ ...prev, status: 'committing' }));
 
       try {
-        localStorage.setItem(LOCAL_COMMIT_KEY, txHash);
-      } catch {}
+        const stateRoot = computeCanvasStateHash(allPixels);
 
-      setTelemetry((prev) => ({
-        ...prev,
-        status: 'active',
-        l1CommittedCount: prev.l1CommittedCount + 1,
-        lastL1CommitHash: txHash,
-      }));
+        const response = await fetch('/api/solana/commit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            stateRoot,
+            pixelCount: allPixels.length,
+            author: userAddress || 'Solana Painter',
+            pixels: allPixels.slice(-50),
+          }),
+        });
 
-      const result = {
-        txHash,
-        stateRoot,
-        timestamp: Date.now(),
-        pixelCount: allPixels.length,
-      };
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || 'Failed to submit L1 commit transaction.');
+        }
 
-      setLastCommitResult(result);
-      return result;
-    } finally {
-      setIsCommitting(false);
-    }
-  }, []);
+        const txHash = data.txHash as string;
+
+        try {
+          localStorage.setItem(LOCAL_COMMIT_KEY, txHash);
+        } catch {}
+
+        setTelemetry((prev) => ({
+          ...prev,
+          status: 'active',
+          l1CommittedCount: prev.l1CommittedCount + 1,
+          lastL1CommitHash: txHash,
+        }));
+
+        const result = {
+          txHash,
+          stateRoot: data.stateRoot || stateRoot,
+          timestamp: data.timestamp || Date.now(),
+          pixelCount: allPixels.length,
+          explorerUrl: data.explorerUrl,
+        };
+
+        setLastCommitResult(result);
+        setActivities((prev) =>
+          prev.map((a) => (!a.txHash ? { ...a, txHash } : a))
+        );
+        return result;
+      } finally {
+        setIsCommitting(false);
+      }
+    },
+    [userAddress]
+  );
+
+  // Submit onchain stroke batch proof to Solana Devnet
+  const recordStrokeBatchOnchain = useCallback(
+    async (count: number): Promise<string | null> => {
+      try {
+        const res = await fetch('/api/solana/pixel-tx', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            count,
+            author: userAddress || 'Solana Painter',
+          }),
+        });
+        const data = await res.json();
+        if (data.ok && data.txHash) {
+          latestOnchainTxRef.current = data.txHash;
+          pendingPixelsRef.current.forEach((p) => {
+            if (!p.txHash) p.txHash = data.txHash;
+          });
+          setActivities((prev) =>
+            prev.map((a) => (!a.txHash ? { ...a, txHash: data.txHash } : a))
+          );
+          return data.txHash as string;
+        }
+      } catch {
+        // Background onchain stroke batch silently continues
+      }
+      return null;
+    },
+    [userAddress]
+  );
 
   return {
     telemetry,
@@ -307,6 +370,7 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
     initRemotePixels,
     syncTxCount,
     commitToSolanaL1,
+    recordStrokeBatchOnchain,
     isCommitting,
     lastCommitResult,
     setLastCommitResult,

@@ -76,7 +76,10 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({
 
         <div className="grid sm:grid-cols-3 gap-4 pt-5 font-mono">
           <div className="p-4 rounded-xl bg-rose-50/60 border border-rose-100/90 flex flex-col gap-1.5 shadow-2xs">
-            <span className="text-xs text-rose-600 font-bold">▸ 01. The Problem</span>
+            <span className="flex items-center gap-1.5 text-xs text-rose-600 font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              <span>01. The Problem</span>
+            </span>
             <p className="text-xs sm:text-sm font-bold text-zinc-900 font-[var(--font-display)]">
               Shared canvases die with their servers
             </p>
@@ -86,7 +89,10 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({
           </div>
 
           <div className="p-4 rounded-xl bg-orange-50/60 border border-orange-100/90 flex flex-col gap-1.5 shadow-2xs">
-            <span className="text-xs text-[#FF4D26] font-bold">▸ 02. The Engine</span>
+            <span className="flex items-center gap-1.5 text-xs text-[#FF4D26] font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FF4D26]" />
+              <span>02. The Engine</span>
+            </span>
             <p className="text-xs sm:text-sm font-bold text-zinc-900 font-[var(--font-display)]">
               ER lands a million placements in 10ms
             </p>
@@ -96,7 +102,10 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({
           </div>
 
           <div className="p-4 rounded-xl bg-brand-50/60 border border-brand-100/90 flex flex-col gap-1.5 shadow-2xs">
-            <span className="text-xs text-brand-600 font-bold">▸ 03. The Result</span>
+            <span className="flex items-center gap-1.5 text-xs text-brand-600 font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
+              <span>03. The Result</span>
+            </span>
             <p className="text-xs sm:text-sm font-bold text-zinc-900 font-[var(--font-display)]">
               The canvas outlives any server
             </p>
@@ -124,9 +133,9 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({
           </div>
 
           {/* Arrow */}
-          <div className="flex flex-col items-center text-zinc-300 font-mono text-[10px]">
+          <div className="flex flex-col items-center text-zinc-400 font-mono text-[10px]">
             <span>1-click</span>
-            <span className="text-brand-500 font-bold">➔</span>
+            <ArrowRight className="h-4 w-4 text-brand-500 mt-1" />
           </div>
 
           {/* Node 2: Magic Router */}
@@ -139,9 +148,9 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({
           </div>
 
           {/* Arrow */}
-          <div className="flex flex-col items-center text-zinc-300 font-mono text-[10px]">
+          <div className="flex flex-col items-center text-zinc-400 font-mono text-[10px]">
             <span>10ms sync</span>
-            <span className="text-[#FF4D26] font-bold">➔</span>
+            <ArrowRight className="h-4 w-4 text-[#FF4D26] mt-1" />
           </div>
 
           {/* Node 3: Ephemeral Rollup */}
@@ -154,9 +163,9 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({
           </div>
 
           {/* Arrow */}
-          <div className="flex flex-col items-center text-zinc-300 font-mono text-[10px]">
+          <div className="flex flex-col items-center text-zinc-400 font-mono text-[10px]">
             <span>Commit</span>
-            <span className="text-purple-500 font-bold">➔</span>
+            <ArrowRight className="h-4 w-4 text-purple-500 mt-1" />
           </div>
 
           {/* Node 4: Solana L1 */}

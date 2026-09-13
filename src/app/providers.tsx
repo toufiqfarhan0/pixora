@@ -6,7 +6,9 @@ import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana';
 
 const PRIVY_APP_ID =
   process.env.NEXT_PUBLIC_PRIVY_APP_ID || '';
-const solanaConnectors = toSolanaWalletConnectors();
+const solanaConnectors = toSolanaWalletConnectors({
+  shouldAutoConnect: true,
+});
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -16,9 +18,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
         appearance: {
           theme: 'light',
           accentColor: '#FF4D26',
-          showWalletLoginFirst: false,
+          showWalletLoginFirst: true,
           walletChainType: 'solana-only',
-          walletList: ['metamask'],
+          walletList: [
+            'phantom',
+            'solflare',
+            'backpack',
+            'metamask',
+            'coinbase_wallet',
+          ],
         },
         externalWallets: {
           solana: {
@@ -28,7 +36,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         embeddedWallets: {
           solana: { createOnLogin: 'off' },
         },
-        loginMethods: ['email', 'google', 'wallet'],
+        loginMethods: ['wallet', 'email', 'google'],
       }}
     >
       {children}

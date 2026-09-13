@@ -9,6 +9,7 @@ import {
   User,
   Crown,
   Sparkles,
+  ExternalLink,
 } from 'lucide-react';
 import { ActivityItem, AuthMode, Pixel } from '../types/canvas';
 import { shortAddress } from '../lib/magicblock';
@@ -96,6 +97,7 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
             author: p.author || userAddress || 'Solana Painter',
             timestamp: p.timestamp || Date.now(),
             isVerified: true,
+            txHash: p.txHash,
           });
         }
       }
@@ -219,11 +221,13 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
                   !act.color ||
                   act.color.toLowerCase() === '#ffffff' ||
                   act.color.toLowerCase() === '#fff';
+                const tx = act.txHash;
+                const isSolanaAuthor = act.author && act.author.length > 20 && act.author !== 'Me';
 
                 return (
                   <div
                     key={`${act.id}-${act.x}-${act.y}-${idx}`}
-                    className="p-2 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-between text-xs font-[var(--font-mono)] animate-fade-in hover:border-zinc-200 transition-colors"
+                    className="p-2 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-between text-xs font-[var(--font-mono)] animate-fade-in hover:border-zinc-200 transition-colors group"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <div
@@ -239,9 +243,21 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
                       />
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-zinc-900 truncate max-w-[90px]" title={act.author}>
-                            {shortAddress(act.author, 3)}
-                          </span>
+                          {isSolanaAuthor ? (
+                            <a
+                              href={`https://explorer.solana.com/address/${act.author}?cluster=devnet`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-semibold text-zinc-900 hover:text-[#FF4D26] hover:underline truncate max-w-[90px]"
+                              title={`View ${act.author} on Solana Explorer`}
+                            >
+                              {shortAddress(act.author, 3)}
+                            </a>
+                          ) : (
+                            <span className="font-semibold text-zinc-900 truncate max-w-[90px]" title={act.author}>
+                              {shortAddress(act.author, 3)}
+                            </span>
+                          )}
                           <span className="text-[10px] font-mono text-zinc-500 font-medium">
                             {isErase ? 'erased' : act.color}
                           </span>
@@ -252,9 +268,22 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0">
+                    <div className="text-right shrink-0 flex flex-col items-end">
                       <span className="text-[10px] text-[#FF4D26] font-bold block">10ms</span>
-                      <span className="text-[9px] text-zinc-400 font-sans">confirmed</span>
+                      {tx ? (
+                        <a
+                          href={`https://explorer.solana.com/tx/${tx}?cluster=devnet`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-0.5 text-[9px] font-mono text-[#FF4D26] font-semibold hover:underline transition-colors mt-0.5"
+                          title={`Verify on Solana Explorer: ${tx}`}
+                        >
+                          <span>tx</span>
+                          <ExternalLink className="h-2.5 w-2.5" />
+                        </a>
+                      ) : (
+                        <span className="text-[9px] text-zinc-400 font-sans">confirmed</span>
+                      )}
                     </div>
                   </div>
                 );
