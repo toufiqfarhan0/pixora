@@ -139,7 +139,6 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
         };
       });
 
-      // Add to live activity feed
       const activity: ActivityItem = {
         id: txHash ? txHash.slice(0, 10) : `px-${x}-${y}-${Date.now().toString().slice(-4)}`,
         x,
@@ -151,7 +150,11 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
         txHash: txHash || undefined,
       };
 
-      setActivities((prev) => [activity, ...prev.slice(0, 199)]);
+      // Add to live activity feed without duplicate coordinates
+      setActivities((prev) => {
+        const filtered = prev.filter((a) => !(a.x === x && a.y === y));
+        return [activity, ...filtered].slice(0, 100);
+      });
 
       return newPixel;
     },
@@ -161,6 +164,9 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
   // Record pixel from a remote peer who painted
   const recordRemotePixel = useCallback((pixel: Pixel) => {
     if (!pixel || pixel.x < 0 || pixel.x >= 128 || pixel.y < 0 || pixel.y >= 128) return;
+    // Don't duplicate if it's our own pixel that we already placed locally
+    if (userAddress && (pixel.author === userAddress || pixel.author === 'Me')) return;
+
     setTelemetry((prev) => {
       const nextCount = prev.txCount + 1;
       persistTxCount(nextCount);
@@ -184,13 +190,24 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
       txHash: pixel.txHash,
     };
 
-    setActivities((prev) => [activity, ...prev.slice(0, 199)]);
-  }, [persistTxCount]);
+    setActivities((prev) => {
+      const filtered = prev.filter((a) => !(a.x === pixel.x && a.y === pixel.y));
+      return [activity, ...filtered].slice(0, 100);
+    });
+  }, [persistTxCount, userAddress]);
 
   // Record batch of pixels from remote peers who painted
   const recordRemoteBatch = useCallback((pixels: Pixel[]) => {
     if (!pixels || pixels.length === 0) return;
-    const valid = pixels.filter((p) => p && p.x >= 0 && p.x < 128 && p.y >= 0 && p.y < 128);
+    const valid = pixels.filter(
+      (p) =>
+        p &&
+        p.x >= 0 &&
+        p.x < 128 &&
+        p.y >= 0 &&
+        p.y < 128 &&
+        (!userAddress || (p.author !== userAddress && p.author !== 'Me'))
+    );
     if (valid.length === 0) return;
 
     setTelemetry((prev) => {
@@ -219,8 +236,12 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
         txHash: pixel.txHash,
       }));
 
-    setActivities((prev) => [...newActivities, ...prev.slice(0, 180)]);
-  }, [persistTxCount]);
+    setActivities((prev) => {
+      const newCoords = new Set(newActivities.map((a) => `${a.x},${a.y}`));
+      const filtered = prev.filter((a) => !newCoords.has(`${a.x},${a.y}`));
+      return [...newActivities, ...filtered].slice(0, 100);
+    });
+  }, [persistTxCount, userAddress]);
 
   // Initialize bulk activities and telemetry from server snapshot
   const initRemotePixels = useCallback((pixels: Pixel[]) => {
@@ -236,21 +257,28 @@ export function useMagicBlockER({ onRemotePixel, userAddress, authMode = 'live' 
       };
     });
 
-    const newActivities: ActivityItem[] = valid
-      .slice(-60)
-      .reverse()
-      .map((pixel) => ({
-        id: pixel.txHash
-          ? pixel.txHash.slice(0, 10)
-          : `px-${pixel.x}-${pixel.y}-${(pixel.timestamp || Date.now()).toString().slice(-4)}`,
-        x: pixel.x,
-        y: pixel.y,
-        color: pixel.color,
-        author: pixel.author,
-        timestamp: pixel.timestamp || Date.now(),
-        isVerified: pixel.isVerified ?? true,
-        txHash: pixel.txHash,
-      }));
+    const seen = new Set<string>();
+    const deduped: Pixel[] = [];
+    for (let i = valid.length - 1; i >= 0 && deduped.length < 60; i--) {
+      const key = `${valid[i].x},${valid[i].y}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduped.push(valid[i]);
+      }
+    }
+
+    const newActivities: ActivityItem[] = deduped.map((pixel) => ({
+      id: pixel.txHash
+        ? pixel.txHash.slice(0, 10)
+        : `px-${pixel.x}-${pixel.y}-${(pixel.timestamp || Date.now()).toString().slice(-4)}`,
+      x: pixel.x,
+      y: pixel.y,
+      color: pixel.color,
+      author: pixel.author,
+      timestamp: pixel.timestamp || Date.now(),
+      isVerified: pixel.isVerified ?? true,
+      txHash: pixel.txHash,
+    }));
 
     setActivities(newActivities);
   }, [persistTxCount]);

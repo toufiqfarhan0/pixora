@@ -294,6 +294,9 @@ export function useCanvas({
       } else {
         // Standard pen (10ms ER placement)
         const existing = pixelsRef.current.get(`${gridX},${gridY}`);
+        if (existing && existing.color === selectedColor && existing.author === (userAddress || 'Me')) {
+          return;
+        }
         const p: Pixel = {
           x: gridX,
           y: gridY,

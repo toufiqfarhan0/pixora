@@ -76,13 +76,22 @@ export const ActivitySidebar: React.FC<ActivitySidebarProps> = ({
   }, [activeTab, pixels, activities, userAddress]);
 
   // Merge live stream activities with canvas pixels so past strokes (e.g. black, orange, cyan)
-  // remain preserved and visible in the 10MS ER ENGINE feed
+  // remain preserved and visible in the 10MS ER ENGINE feed, strictly deduplicated by coordinate
   const displayActivities = useMemo<ActivityItem[]>(() => {
-    const list: ActivityItem[] = [...activities];
-    const seen = new Set(activities.map((a) => `${a.x},${a.y}`));
+    const list: ActivityItem[] = [];
+    const seen = new Set<string>();
 
-    // Backfill from placed canvas pixels if activities has room (newest first, bound to recent 120)
-    if (pixels && pixels.length > 0) {
+    // 1. Add newest activities, strictly deduplicating by pixel coordinate (x, y)
+    for (const act of activities) {
+      const key = `${act.x},${act.y}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push(act);
+      }
+    }
+
+    // 2. Backfill from placed canvas pixels if activities has room (newest first, bound to recent 120)
+    if (pixels && pixels.length > 0 && list.length < 80) {
       const sliceStart = Math.max(0, pixels.length - 120);
       for (let i = pixels.length - 1; i >= sliceStart && list.length < 80; i--) {
         const p = pixels[i];

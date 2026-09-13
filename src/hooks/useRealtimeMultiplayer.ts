@@ -223,32 +223,7 @@ export function useRealtimeMultiplayer({
       });
     }
 
-    // 2. Reliable Fallback Delta Sync (reconciles any missing pixels across separate browser engines)
-    const performDeltaSync = async () => {
-      try {
-        const since = lastSyncTimeRef.current;
-        const res = await fetch(`/api/realtime?sync=1&since=${since}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data && data.ok) {
-          if (Array.isArray(data.pixels) && data.pixels.length > 0) {
-            onRemoteBatchRef.current
-              ? onRemoteBatchRef.current(data.pixels)
-              : onInitCanvasRef.current?.(data.pixels);
-          }
-          if (typeof data.timestamp === 'number') {
-            lastSyncTimeRef.current = data.timestamp;
-          }
-          if (typeof data.globalTxCount === 'number') {
-            onSyncTxCountRef.current?.(data.globalTxCount);
-          }
-        }
-      } catch {
-        // Ignore network blips
-      }
-    };
-
-    // 3. Server-Sent Events (SSE) for cross-browser sync (Firefox <-> Comet <-> Chrome)
+    // 2. Server-Sent Events (SSE) for cross-browser sync (Firefox <-> Comet <-> Chrome)
     const es = new EventSource(`/api/realtime?sessionId=${sessionId}`);
     eventSourceRef.current = es;
 
@@ -285,12 +260,8 @@ export function useRealtimeMultiplayer({
     };
 
     es.onerror = () => {
-      // Re-sync missing pixels immediately if connection drops or reconnects
-      performDeltaSync();
+      // EventSource automatically reconnects; no need to spam polling
     };
-
-    // Periodic delta sync interval (every 1.8 seconds)
-    const deltaSyncInterval = setInterval(performDeltaSync, 1800);
 
     // Periodic cleanup of stale local cursors
     const interval = setInterval(() => {
@@ -309,7 +280,6 @@ export function useRealtimeMultiplayer({
 
     return () => {
       flushPendingBatch();
-      clearInterval(deltaSyncInterval);
       clearInterval(interval);
       if (channel) {
         channel.postMessage({ type: 'PEER_LEAVE', id: sessionId });
